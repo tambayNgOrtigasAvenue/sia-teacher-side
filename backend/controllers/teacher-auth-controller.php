@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../models/Teachers.php';
 
 class TeacherAuthController {
     private $conn;
@@ -6,13 +7,13 @@ class TeacherAuthController {
 
     public function __construct($db) {
         $this->conn = $db;
-        $this->user = new User($db);
+        $this->user = new Teachers($db);
     }
     
     public function loginTeacher($EmployeeNumber, $password) {
         $teacher = $this->user->getTeacherByEmployeeNumber($EmployeeNumber);
 
-        // 1. ichchceck kung may student number ba na galing sa db
+        // 1. ichchceck kung may employee number ba na galing sa db
         if (!$teacher) {
             return ['success' => false, 'message' => 'Invalid username or password.'];
         }

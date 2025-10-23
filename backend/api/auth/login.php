@@ -8,6 +8,7 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/../../config/cors.php';
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../models/Teachers.php';
 require_once __DIR__ . '/../../controllers/teacher-auth-controller.php';
 
 header("Content-Type: application/json; charset=UTF-8");
