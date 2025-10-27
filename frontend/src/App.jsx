@@ -1,35 +1,38 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+// 1. Import Navigate
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import DarkModeProvider from './components/DarkModeProvider';
+import DashboardLayout from './components/layout/dashboardLayout';
+import DashboardPage from './components/pages/dashboardPage';
+import ApplicationPage from './components/pages/applicationPage';
+import StudentPage from './components/pages/studentPage';
+import GradingPage from './components/pages/gradingPage';
+import RecordPage from './components/pages/recordPage';
+import ReportsPage from './components/pages/reportsPage';
+import HelpSupportPage from './components/pages/helpSupportPage';
+
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <BrowserRouter>
+        <DarkModeProvider>
+          <Routes>
+            <Route path="/" element={<Navigate to="/registrar-dashboard" replace />} />
+            <Route path="/registrar-dashboard" element={<DashboardLayout />}>
+              <Route index element={<DashboardPage />} />
+              <Route path="application-management" element={<ApplicationPage />} />
+              <Route path="student-management" element={<StudentPage />} />
+              <Route path="grading-academics" element={<GradingPage />} />
+              <Route path="record-and-archives" element={<RecordPage />} />
+              <Route path="report-and-analytics" element={<ReportsPage />} />
+              <Route path="help-and-support" element={<HelpSupportPage />} />
+            </Route>
+          </Routes>
+        </DarkModeProvider>
+      </BrowserRouter>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
