@@ -23,7 +23,7 @@ $data = json_decode(file_get_contents("php://input"));
 
 // Validate input data
 if (
-    !empty($datae->announcementId) &&
+    !empty($data->announcementId) &&
     !empty($data->authorId) &&
     !empty($data->title) &&
     !empty($data->content) &&
