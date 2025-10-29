@@ -1,42 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import FaqSection from '../common/dashboard/help/faqSection.jsx';
 import AskQuestionForm from '../common/dashboard/help/askQuestionForm.jsx';
 import ContactUs from '../common/dashboard/help/contactUs.jsx';
 
 /**
- * HelpSupportPage Component
+ * HelpPage Component
  * 
  * Main container for the "Help & Support" page.
  * Displays FAQ section, Ask Question form, and Contact Us information.
- * Manages submitted questions in local state.
+ * 
+ * @param {function} onAskQuestion - Callback function to handle question submission
  */
-export default function HelpSupportPage() {
-  // State to store submitted questions
-  const [submittedQuestions, setSubmittedQuestions] = useState([]);
-
-  /**
-   * Handle question submission from AskQuestionForm
-   * Adds the question to state with timestamp
-   */
-  const handleSubmitQuestion = (questionData) => {
-    const newQuestion = {
-      id: Date.now(),
-      date: new Date().toISOString(),
-      ...questionData
-    };
-    
-    setSubmittedQuestions(prev => [...prev, newQuestion]);
-    
-    // Optional: Send to backend API
-    // fetch('/api/help/questions', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(newQuestion)
-    // });
-    
-    console.log('Question submitted:', newQuestion);
-  };
-
+export default function HelpPage({ onAskQuestion }) {
   return (
     <div className="p-8 bg-gray-50 min-h-screen">
       {/* Page Header */}
@@ -53,7 +28,7 @@ export default function HelpSupportPage() {
 
         {/* Right Side - Ask Question Form */}
         <div className="flex-1">
-          <AskQuestionForm onSubmit={handleSubmitQuestion} />
+          <AskQuestionForm onSubmit={onAskQuestion} />
         </div>
       </div>
 

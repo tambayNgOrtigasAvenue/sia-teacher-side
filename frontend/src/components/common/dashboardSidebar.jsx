@@ -32,10 +32,25 @@ export default function DashboardSidebar({ collapsed, setCollapsed, mobileOpen, 
         return () => window.removeEventListener("resize", checkMobile);
     }, []);
 
-    const handleConfirmLogout = () => {
-        console.log("Logging out...");
-        setLogoutModalOpen(false);
-        console.log("Logged out successfully.Session Destroyed na lods");
+    const handleConfirmLogout = async () => {
+        try{
+            // Perform logout operations here (e.g., clear auth tokens, inform backend)
+            const response = await fetch('http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/logout.php', {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+            const data = await response.json();
+            console.log("Logged out:", data.message);
+            
+            setLogoutModalOpen(false);
+            
+            // Redirect to login page
+            navigate('/');
+        }
+        catch(error){
+            console.error("Logout failed:", error);
+        }
     };
 
     const handleCloseModal = () => {
@@ -43,24 +58,26 @@ export default function DashboardSidebar({ collapsed, setCollapsed, mobileOpen, 
     };
 
     const getIsActive = (item) => {
-        if (item.path === '/registrar-dashboard') {
+        // Exact match for dashboard
+        if (item.path === '/teacher-dashboard') {
             return location.pathname === item.path;
         }
-        return location.pathname.startsWith(item.path);
+        // Exact match for all other routes to prevent overlapping highlights
+        return location.pathname === item.path;
     };
 
 const menuItems = [
-        { name: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/registrar-dashboard' },
-        { name: 'My Classes', icon: <Book size={18} />, path: '/registrar-dashboard/application-management' },
-        { name: 'Teaching Schedule', icon: <Clock size={18} />, path: '/registrar-dashboard/student-management' },
-        { name: 'Notifications', icon: <Bell size={18} />, path: '/registrar-dashboard/record-and-archives' },
-        { name: 'Announcements', icon: <Megaphone size={18} />, path: '/registrar-dashboard/report-and-analytics' },
-        { name: 'Settings', icon: <Settings size={18} />, path: '/registrar-dashboard/application-management' },
+    { name: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/teacher-dashboard' },
+    { name: 'My Classes', icon: <Book size={18} />, path: '/teacher-dashboard/my-classes' },
+    { name: 'Teaching Schedule', icon: <Clock size={18} />, path: '/teacher-dashboard/teaching-schedule' },
+    { name: 'Notifications', icon: <Bell size={18} />, path: '/teacher-dashboard/notifications' },
+    { name: 'Announcements', icon: <Megaphone size={18} />, path: '/teacher-dashboard/announcements' },
+    { name: 'Settings', icon: <Settings size={18} />, path: '/teacher-dashboard/settings' },
 ];
 
 const bottomMenuItems = [
-        { name: 'Help Support', icon: <LifeBuoy size={18} />, path: '/registrar-dashboard/help-and-support' },
-        { name: 'Logout', icon: <LogOut size={18} /> },
+    { name: 'Help Support', icon: <LifeBuoy size={18} />, path: '/teacher-dashboard/help-and-support' },
+    { name: 'Logout', icon: <LogOut size={18} /> },
 ];
 
     const NavLink = ({ item, isActive, isCollapsed = false, isMobileLink = false }) => (
