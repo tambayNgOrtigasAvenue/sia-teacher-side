@@ -8,7 +8,7 @@ class GradeController{
         $this->conn = $db;
     }
 
-    public function insertStudentGrade($student_id, $subject_id, $quarter, $grade){
+    public function insertOrUpdateStudentGrade($student_id, $subject_id, $quarter, $grade){
         // Sanitize input
         $student_id = htmlspecialchars(strip_tags($student_id));
         $subject_id = htmlspecialchars(strip_tags($subject_id));

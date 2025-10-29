@@ -1,15 +1,14 @@
 <?php
 require_once __DIR__ . '/../../models/User.php';
+
 class AuthController {
     private $db;
     private $user;
-
 
     public function __construct($db) {
         $this->db = $db;
         $this->user = new User($db);
     }
-
 
     public function login($studentNumber, $password) {
         $userData = $this->user->getStudentByStudentNumber($studentNumber);

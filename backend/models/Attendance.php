@@ -23,9 +23,20 @@ class Attendance{
                   JOIN profile p 
                   ON a.StudentProfileID = p.ProfileID 
                   ORDER BY a.AttendanceDate DESC;';
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt;
+        try{
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(1, $this->ClassScheduleID);
+            $stmt->execute();
+            $attendanceRecords = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return [
+                'success' => true,
+                'data' => $attendanceRecords
+            ];
+        }
+        catch(PDOException $e){
+            error_log("View attendance error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Server error'];
+        }
     }
 
     public function viewAttendanceReport(){

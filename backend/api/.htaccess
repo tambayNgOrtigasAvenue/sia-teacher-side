@@ -1,0 +1,24 @@
+# Enable URL Rewriting
+RewriteEngine On
+
+# --- Security: Block access to non-API files ---
+# Deny access to config and model directories
+RewriteRule ^config/ - [F,L]
+RewriteRule ^models/ - [F,L]
+# ------------------------------------------------
+
+# --- API Routing ---
+# Handle preflight OPTIONS requests
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [L]
+
+# Rule for requests with an ID (e.g., /api/gradelevels/12)
+# [NC] = No Case, [L] = Last Rule
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-z]+)/([0-9]+)/?$ $1.php?id=$2 [NC,L,QSA]
+
+# Rule for requests without an ID (e.g., /api/gradelevels)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([a-z]+)/?$ $1.php [NC,L,QSA]
