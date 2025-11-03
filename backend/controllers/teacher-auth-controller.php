@@ -1,13 +1,16 @@
 <?php
 require_once __DIR__ . '/../models/Teachers.php';
+require_once __DIR__ . '/../models/User.php';
 
 class TeacherAuthController {
     private $conn;
     private $user;
+    private $userModel;
 
     public function __construct($db) {
         $this->conn = $db;
         $this->user = new Teachers($db);
+        $this->userModel = new User($db);
     }
     
     public function loginTeacher($EmployeeNumber, $password) {
@@ -53,5 +56,221 @@ class TeacherAuthController {
         } else {
             return ['success' => false, 'message' => 'Invalid username or password.'];
         }
+    }
+
+    /**
+     * Register a new teacher account
+     * Creates: User -> PasswordPolicy -> Profile -> TeacherProfile -> UserRole
+     */
+    public function registerTeacher($data) {
+        try {
+            // Start transaction
+            $this->conn->beginTransaction();
+
+            // Validate required fields
+            $requiredFields = ['email', 'password', 'firstName', 'lastName', 'employeeNumber'];
+            foreach ($requiredFields as $field) {
+                if (empty($data[$field])) {
+                    throw new Exception("Missing required field: $field");
+                }
+            }
+
+            // Check if email already exists
+            if ($this->emailExists($data['email'])) {
+                throw new Exception("Email address already registered.");
+            }
+
+            // Check if employee number already exists
+            if ($this->employeeNumberExists($data['employeeNumber'])) {
+                throw new Exception("Employee number already exists.");
+            }
+
+            // 1. Create User
+            $userId = $this->createUser($data['email']);
+            if (!$userId) {
+                throw new Exception("Failed to create user account.");
+            }
+
+            // 2. Create Password Policy
+            $passwordHash = password_hash($data['password'], PASSWORD_BCRYPT);
+            if (!$this->createPasswordPolicy($userId, $passwordHash)) {
+                throw new Exception("Failed to set password.");
+            }
+
+            // 3. Create Profile
+            $profileId = $this->createProfile($userId, $data);
+            if (!$profileId) {
+                throw new Exception("Failed to create profile.");
+            }
+
+            // 4. Create Teacher Profile
+            $teacherProfileId = $this->createTeacherProfile($profileId, $data);
+            if (!$teacherProfileId) {
+                throw new Exception("Failed to create teacher profile.");
+            }
+
+            // 5. Assign Teacher Role
+            if (!$this->assignTeacherRole($userId, $data['assignedByUserId'] ?? null)) {
+                throw new Exception("Failed to assign teacher role.");
+            }
+
+            // Commit transaction
+            $this->conn->commit();
+
+            return [
+                'success' => true,
+                'message' => 'Teacher account created successfully!',
+                'data' => [
+                    'userId' => $userId,
+                    'profileId' => $profileId,
+                    'teacherProfileId' => $teacherProfileId,
+                    'employeeNumber' => $data['employeeNumber']
+                ]
+            ];
+
+        } catch (Exception $e) {
+            // Rollback on error
+            $this->conn->rollback();
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Check if email already exists
+     */
+    private function emailExists($email) {
+        $query = "SELECT UserID FROM user WHERE EmailAddress = :email LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Check if employee number already exists
+     */
+    private function employeeNumberExists($employeeNumber) {
+        $query = "SELECT TeacherProfileID FROM teacherprofile WHERE EmployeeNumber = :employeeNumber LIMIT 1";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':employeeNumber', $employeeNumber);
+        $stmt->execute();
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Create User record
+     */
+    private function createUser($email) {
+        $query = "INSERT INTO user (EmailAddress, UserType, AccountStatus, CreatedAt) 
+                  VALUES (:email, 'Teacher', 'Active', NOW())";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':email', $email);
+        
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId();
+        }
+        return false;
+    }
+
+    /**
+     * Create Password Policy
+     */
+    private function createPasswordPolicy($userId, $passwordHash) {
+        $query = "INSERT INTO passwordpolicy (UserID, PasswordHash, PasswordSetDate, MustChange, FailedLoginAttempts) 
+                  VALUES (:userId, :passwordHash, NOW(), 0, 0)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':userId', $userId);
+        $stmt->bindParam(':passwordHash', $passwordHash);
+        return $stmt->execute();
+    }
+
+    /**
+     * Create Profile record
+     */
+    private function createProfile($userId, $data) {
+        // For encrypted fields, we'll insert NULL if no data provided
+        // In production, you should use AES_ENCRYPT with a proper encryption key
+        if (!empty($data['phoneNumber']) || !empty($data['address'])) {
+            $query = "INSERT INTO profile (UserID, FirstName, LastName, MiddleName, EncryptedPhoneNumber, EncryptedAddress) 
+                      VALUES (:userId, :firstName, :lastName, :middleName, :phoneNumber, :address)";
+        } else {
+            // Simplified query if no phone/address
+            $query = "INSERT INTO profile (UserID, FirstName, LastName, MiddleName) 
+                      VALUES (:userId, :firstName, :lastName, :middleName)";
+        }
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':userId', $userId);
+        $stmt->bindParam(':firstName', $data['firstName']);
+        $stmt->bindParam(':lastName', $data['lastName']);
+        
+        $middleName = $data['middleName'] ?? null;
+        $stmt->bindParam(':middleName', $middleName);
+        
+        if (!empty($data['phoneNumber']) || !empty($data['address'])) {
+            $phoneNumber = $data['phoneNumber'] ?? null;
+            $address = $data['address'] ?? null;
+            $stmt->bindParam(':phoneNumber', $phoneNumber);
+            $stmt->bindParam(':address', $address);
+        }
+        
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId();
+        }
+        return false;
+    }
+
+    /**
+     * Create Teacher Profile
+     */
+    private function createTeacherProfile($profileId, $data) {
+        $query = "INSERT INTO teacherprofile (ProfileID, EmployeeNumber, Specialization, HireDate) 
+                  VALUES (:profileId, :employeeNumber, :specialization, :hireDate)";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':profileId', $profileId);
+        $stmt->bindParam(':employeeNumber', $data['employeeNumber']);
+        $stmt->bindParam(':specialization', $data['specialization'] ?? null);
+        $stmt->bindParam(':hireDate', $data['hireDate'] ?? date('Y-m-d'));
+        
+        if ($stmt->execute()) {
+            return $this->conn->lastInsertId();
+        }
+        return false;
+    }
+
+    /**
+     * Assign Teacher Role
+     */
+    private function assignTeacherRole($userId, $assignedByUserId = null) {
+        // First, ensure Teacher role exists
+        $checkRoleQuery = "SELECT RoleID FROM role WHERE RoleName = 'Teacher' LIMIT 1";
+        $stmt = $this->conn->prepare($checkRoleQuery);
+        $stmt->execute();
+        $role = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$role) {
+            // Create Teacher role if it doesn't exist
+            $createRoleQuery = "INSERT INTO role (RoleName, Description, IsActive) 
+                               VALUES ('Teacher', 'Teaching staff with class management permissions', 1)";
+            $stmt = $this->conn->prepare($createRoleQuery);
+            $stmt->execute();
+            $roleId = $this->conn->lastInsertId();
+        } else {
+            $roleId = $role['RoleID'];
+        }
+
+        // Assign role to user
+        $query = "INSERT INTO userrole (UserID, RoleID, AssignedDate, AssignedByUserID) 
+                  VALUES (:userId, :roleId, NOW(), :assignedByUserId)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':userId', $userId);
+        $stmt->bindParam(':roleId', $roleId);
+        $stmt->bindParam(':assignedByUserId', $assignedByUserId);
+        
+        return $stmt->execute();
     }
 }
