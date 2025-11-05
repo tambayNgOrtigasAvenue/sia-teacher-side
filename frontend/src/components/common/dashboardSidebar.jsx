@@ -43,13 +43,21 @@ export default function DashboardSidebar({ collapsed, setCollapsed, mobileOpen, 
             const data = await response.json();
             console.log("Logged out:", data.message);
             
+            // Clear authentication tokens
+            localStorage.removeItem('authToken');
+            sessionStorage.removeItem('teacherSession');
+            
             setLogoutModalOpen(false);
             
             // Redirect to login page
-            navigate('/');
+            navigate('/login');
         }
         catch(error){
             console.error("Logout failed:", error);
+            // Even if backend fails, clear local tokens and redirect
+            localStorage.removeItem('authToken');
+            sessionStorage.removeItem('teacherSession');
+            navigate('/login');
         }
     };
 

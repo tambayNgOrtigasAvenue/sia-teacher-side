@@ -1,93 +1,94 @@
-// import { createContext, useContext, useState, useEffect } from 'react';
-// import axios from 'axios';
-// import { useNavigate } from 'react-router-dom';
+import { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-// const AuthContext = createContext(null);
+const AuthContext = createContext(null);
 
-// export const AuthProvider = ({ children }) => {
-//   const [user, setUser] = useState(null);
-//   const [loading, setLoading] = useState(true);
-//   const navigate = useNavigate();
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-//   const fetchCurrentUser = async () => {
-//     try {
-//       const response = await axios.get(
-//         'http://localhost/Gymazo-Student-Side/backend/api/auth/getCurrentUser.php',
-//         { withCredentials: true }
-//       );
-
-//       if (response.data.success) {
-//         setUser(response.data.user);
-//       } else {
-//         setUser(null);
-//       }
-//     } catch(error) {
-//       setUser(null);
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
-//   useEffect(() => {
-//     const publicRoutes = ['/', '/login'];
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get(
+          'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/get-current-user.php',
+          { withCredentials: true }
+        );
+        
+        if (response.data.success) {
+          setUser(response.data.user);
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        // Clear any stale tokens
+        localStorage.removeItem('authToken');
+        sessionStorage.removeItem('teacherSession');
+      } finally {
+        setLoading(false);
+      }
+    };
     
-//     if (!publicRoutes.includes(location.pathname)) {
-//       fetchCurrentUser();
-//     } else {
-//       setLoading(false);
-//     }
-//   }, [location.pathname]);
+    checkAuth();
+  }, []);
 
-//   const login = async (username, password) => {
-//     try {
-//       const response = await axios.post(
-//         'http://localhost/Gymazo-Student-Side/backend/api/auth/login.php', // need pa to ng enhancement
-//         { username, password },
-//         {
-//           withCredentials: true,
-//           headers: { 'Content-Type': 'application/json' }
-//         }
-//       );
+  const login = async (username, password) => {
+    try {
+      const response = await axios.post(
+        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/login.php',
+        { employee_number: username, password }, // Fixed: backend expects employee_number
+        {
+          withCredentials: true,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
 
-//       if (response.data.success) {
-//         await fetchCurrentUser();
-//         return { success: true, user: response.data.user };
-//       }
-//     } catch (error) {
-//       throw error;
-//     }
-//   };
+      if (response.data.success) {
+        setUser(response.data.user);
+        return { 
+          success: true, 
+          user: response.data.user,
+          token: response.data.token 
+        };
+      } else {
+        throw new Error(response.data.message || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
 
-//   const logout = async () => {
-//     try {
-//       await axios.post(
-//         'http://localhost/Gymazo-Student-Side/backend/api/auth/logout.php', // need pa to ng enhancement
-//         {},
-//         { withCredentials: true }
-//       );
-//     } catch (error) {
-//       console.error('Logout error:', error);
-//     } finally {
-//       setUser(null);
-//       navigate('/');
-//     }
-//   };
+  const logout = async () => {
+    try {
+      await axios.post(
+        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/logout.php',
+        {},
+        { withCredentials: true }
+      );
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('teacherSession');
+    }
+  };
 
-//   const value = {
-//     user,
-//     loading,
-//     login,
-//     logout,
-//     refreshUser: fetchCurrentUser
-//   };
+  const value = {
+    user,
+    loading,
+    login,
+    logout
+  };
 
-//   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-// };
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
-// export const useAuth = () => {
-//   const context = useContext(AuthContext);
-//   if (!context) {
-//     throw new Error('useAuth must be used within an AuthProvider');
-//   }
-//   return context;
-// };
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};

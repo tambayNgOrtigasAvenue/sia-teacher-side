@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import MyClassesPage from './myClassesPage.jsx';
 import ClassDetailsPage from './classDetailsPage.jsx';
 import ClassGradesPage from './classGradesPage.jsx';
@@ -68,106 +69,77 @@ export default function ClassManagementApp() {
    */
   const [error, setError] = useState(null);
 
-  // ===== MOCK DATA INITIALIZATION =====
-
-  /**
-   * Mock Classes Data
-   * In production, this would come from API
-   */
-  const mockClasses = [
-    { id: 1, grade: 'Grade 6', section: 'Section A', subject: 'Mathematics', isFavorited: true, status: 'active' },
-    { id: 2, grade: 'Grade 6', section: 'Section B', subject: 'Science', isFavorited: true, status: 'pending' },
-    { id: 3, grade: 'Grade 2', section: 'Section C', subject: 'English', isFavorited: false, status: 'active' },
-    { id: 4, grade: 'Grade 3', section: 'Section B', subject: 'Filipino', isFavorited: false, status: 'active' },
-    { id: 5, grade: 'Grade 5', section: 'Section A', subject: 'History', isFavorited: false, status: 'active' },
-    { id: 6, grade: 'Grade 4', section: 'Section C', subject: 'Physical Education', isFavorited: false, status: 'active' },
-    { id: 7, grade: 'Grade 1', section: 'Section A', subject: 'Arts', isFavorited: false, status: 'active' },
-  ];
-
-  /**
-   * Mock Students Data with Grades
-   * Each student has a grades object to store quarter grades
-   */
-  const mockStudents = [
-    { 
-      id: 1, 
-      lastName: 'Aldabon', 
-      firstName: 'Mark', 
-      attendance: 'Present', 
-      grades: { q1: null, q2: null, q3: null, q4: null, final: null, remarks: null }
-    },
-    { 
-      id: 2, 
-      lastName: 'Abarquez', 
-      firstName: 'Jefferson', 
-      attendance: 'Present', 
-      grades: { q1: null, q2: null, q3: null, q4: null, final: null, remarks: null }
-    },
-    { 
-      id: 3, 
-      lastName: 'Cabiling', 
-      firstName: 'Allyana', 
-      attendance: 'Present', 
-      grades: { q1: null, q2: null, q3: null, q4: null, final: null, remarks: null }
-    },
-    { 
-      id: 4, 
-      lastName: 'Garcia', 
-      firstName: 'Alexandria', 
-      attendance: 'Present', 
-      grades: { q1: null, q2: null, q3: null, q4: null, final: null, remarks: null }
-    },
-    { 
-      id: 5, 
-      lastName: 'Legaspina', 
-      firstName: 'Nathelee', 
-      attendance: 'Absent', 
-      grades: { q1: null, q2: null, q3: null, q4: null, final: null, remarks: null }
-    },
-    { 
-      id: 6, 
-      lastName: 'Peta', 
-      firstName: 'Ayra', 
-      attendance: 'Present', 
-      grades: { q1: null, q2: null, q3: null, q4: null, final: null, remarks: null }
-    },
-    { 
-      id: 7, 
-      lastName: 'Sebastian', 
-      firstName: 'Karl', 
-      attendance: 'Present', 
-      grades: { q1: null, q2: null, q3: null, q4: null, final: null, remarks: null }
-    },
-    { 
-      id: 8, 
-      lastName: 'Sumido', 
-      firstName: 'Jan', 
-      attendance: 'Present', 
-      grades: { q1: null, q2: null, q3: null, q4: null, final: null, remarks: null }
-    },
-  ];
-
   // ===== DATA INITIALIZATION =====
 
   useEffect(() => {
-    // Simulate loading
-    setLoading(true);
-    setTimeout(() => {
-      setClasses(mockClasses);
-      setStudents(mockStudents);
-      setLoading(false);
-    }, 500);
+    fetchTeacherClasses();
   }, []);
+
+  // Fetch teacher's classes from API
+  const fetchTeacherClasses = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get(
+        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/teachers/get-teacher-classes.php',
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        setClasses(response.data.data);
+      } else {
+        setError(response.data.message || 'Failed to fetch classes');
+      }
+    } catch (err) {
+      console.error('Error fetching classes:', err);
+      setError('Error loading classes. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch students for selected section
+  const fetchStudentsForSection = async (sectionId) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get(
+        `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/teachers/get-students-by-section.php?sectionId=${sectionId}`,
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        // Add grades structure to each student
+        const studentsWithGrades = response.data.data.map(student => ({
+          ...student,
+          grades: { q1: null, q2: null, q3: null, q4: null, final: null, remarks: null }
+        }));
+        setStudents(studentsWithGrades);
+      } else {
+        setError(response.data.message || 'Failed to fetch students');
+        setStudents([]);
+      }
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      setError('Error loading students. Please try again.');
+      setStudents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ===== NAVIGATION FUNCTIONS =====
 
   /**
    * handleViewClassDetails
    * Navigate from class list to class details (student roster)
+   * Fetch students for the selected section
    */
   const handleViewClassDetails = (classData) => {
     setSelectedClass(classData);
     setCurrentView('classDetails');
+    // Fetch students for this section
+    fetchStudentsForSection(classData.id);
   };
 
   /**

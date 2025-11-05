@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Download, Printer } from 'lucide-react';
 import SearchBarWithFilter from '../common/dashboard/my-classes/searchBarWithFilter.jsx';
 
@@ -26,6 +27,9 @@ export default function ClassDetailsPage({
   // State for student search and filter
   const [searchTerm, setSearchTerm] = useState('');
   const [filterOption, setFilterOption] = useState('All');
+  
+  // Navigation hook for routing
+  const navigate = useNavigate();
 
   // Filtering Logic for Students
   // Filters the students prop based on search term and attendance filter
@@ -76,6 +80,13 @@ export default function ClassDetailsPage({
    */
   const handlePrint = () => {
     window.print();
+  };
+
+  /**
+   * Navigate to Attendance Page
+   */
+  const handleViewAttendance = () => {
+    navigate('/teacher-dashboard/attendance');
   };
 
   return (
@@ -165,7 +176,10 @@ export default function ClassDetailsPage({
         >
           View Class Grade
         </button>
-        <button className="bg-amber-400 hover:bg-amber-500 text-gray-800 font-medium py-3 px-8 rounded-full transition-colors">
+        <button 
+          onClick={handleViewAttendance}
+          className="bg-amber-400 hover:bg-amber-500 text-gray-800 font-medium py-3 px-8 rounded-full transition-colors"
+        >
           View Attendance
         </button>
       </div>

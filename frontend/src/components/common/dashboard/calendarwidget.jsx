@@ -48,29 +48,29 @@ const CalendarWidget = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm h-full">
-      <div className="flex justify-between items-center mb-4">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+      <div className="flex justify-between items-center mb-6">
         <button 
           onClick={goToPreviousMonth}
-          className="p-1 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+          className="p-1 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <ChevronLeft size={20} />
         </button>
-        <h3 className="font-semibold text-gray-800 dark:text-white">
+        <h3 className="font-semibold text-lg text-gray-800 dark:text-white">
           {displayMonth}
         </h3>
         <button 
           onClick={goToNextMonth}
-          className="p-1 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+          className="p-1 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         >
           <ChevronRight size={20} />
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-y-2 text-center">
+      <div className="grid grid-cols-7 gap-2 text-center">
         {days.map((day) => (
           <div
             key={day}
-            className="text-xs font-medium text-gray-400 dark:text-gray-500"
+            className="text-xs font-semibold text-gray-500 dark:text-gray-400 py-2"
           >
             {day}
           </div>
@@ -78,13 +78,13 @@ const CalendarWidget = () => {
         {dates.map((date, index) => (
           <div
             key={index}
-            className={`py-1 text-sm rounded-full ${
+            className={`aspect-square flex items-center justify-center text-sm rounded-lg ${
               date
-                ? 'text-gray-700 dark:text-gray-300'
-                : 'text-transparent'
+                ? 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors'
+                : 'text-transparent pointer-events-none'
             } ${
               date === today && isCurrentMonth
-                ? 'bg-yellow-500 text-white font-bold'
+                ? 'bg-yellow-500 dark:bg-yellow-600 text-white font-bold hover:bg-yellow-600 dark:hover:bg-yellow-700'
                 : ''
             }`}
           >

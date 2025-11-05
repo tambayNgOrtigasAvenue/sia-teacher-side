@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Menu, Search, Sun, Moon, Bell, User, ArrowLeft } from 'lucide-react';
-import DefaultProfilePic from '../../assets/img/jhego.jpg';
+import { useAuth } from '../../context/AuthContext';
+import axios from 'axios';
 
 const Tooltip = ({ text }) => (
     <span className="
@@ -17,9 +18,12 @@ const Tooltip = ({ text }) => (
 );
 
 const DashboardHeader = ({ setMobileOpen }) => {
+        const { user } = useAuth();
         const [currentTime, setCurrentTime] = useState(new Date());
         const [openDropdown, setOpenDropdown] = useState(null);
         const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+        const [notifications, setNotifications] = useState([]);
+        const [unreadCount, setUnreadCount] = useState(0);
         
         const [isDarkMode, setIsDarkMode] = useState(() => {
                 if (typeof window !== 'undefined') {
@@ -35,6 +39,34 @@ const DashboardHeader = ({ setMobileOpen }) => {
         useEffect(() => {
                 const timer = setInterval(() => setCurrentTime(new Date()), 1000);
                 return () => clearInterval(timer);
+        }, []);
+
+        // Fetch notifications
+        useEffect(() => {
+                const fetchNotifications = async () => {
+                        try {
+                                const response = await axios.get(
+                                        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/notifications/get-notifications.php?limit=10',
+                                        { withCredentials: true }
+                                );
+                                
+                                if (response.data.success) {
+                                        const notifs = response.data.data;
+                                        setNotifications(notifs);
+                                        // Count unread notifications
+                                        const unread = notifs.filter(n => n.isRead === '0' || n.isRead === 0).length;
+                                        setUnreadCount(unread);
+                                }
+                        } catch (err) {
+                                console.error('Error fetching notifications:', err);
+                        }
+                };
+
+                // Fetch immediately and then every 30 seconds
+                fetchNotifications();
+                const interval = setInterval(fetchNotifications, 30000);
+                
+                return () => clearInterval(interval);
         }, []);
 
         useEffect(() => {
@@ -71,19 +103,6 @@ const DashboardHeader = ({ setMobileOpen }) => {
         const formattedTime = currentTime.toLocaleTimeString('en-US', {
                 hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true,
         });
-
-        const notifications = [
-                { id: 1, message: 'New assignment posted for Math.', time: '5m ago' },
-                { id: 2, message: 'Upcoming event: School Fair on Friday.', time: '1h ago' },
-                { id: 3, message: 'Your tuition payment is due next week.', time: '1d ago' },
-        ];
-
-        // Mock user data
-        const user = {
-                fullName: 'John Doe',
-                studentNumber: '2024-00001',
-                profilePictureURL: null
-        };
 
         return (
                 <header className='sticky top-0 z-30 w-full bg-[#F9F9F9] dark:bg-slate-900 dark:border-b dark:border-slate-700 py-4 flex items-center justify-between'>
@@ -154,34 +173,65 @@ const DashboardHeader = ({ setMobileOpen }) => {
                                 <div className="relative group" ref={notificationRef}>
                                         <button onClick={() => toggleDropdown('notifications')} className='relative p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full transition-colors'>
                                                 <Bell className='w-5 h-5 text-gray-600 dark:text-gray-400' />
-                                                <span className='absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full'></span>
+                                                {unreadCount > 0 && (
+                                                        <span className='absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full'></span>
+                                                )}
                                         </button>
                                         <Tooltip text="Notifications" />
                                         {openDropdown === 'notifications' && (
                                                 <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-700 rounded-lg shadow-xl border dark:border-slate-600 animate-fade-in-down">
-                                                        <div className="p-4 border-b dark:border-slate-600">
+                                                        <div className="p-4 border-b dark:border-slate-600 flex justify-between items-center">
                                                                 <h3 className="font-semibold text-gray-800 dark:text-white">Notifications</h3>
+                                                                {unreadCount > 0 && (
+                                                                        <span className="text-xs bg-red-500 text-white px-2 py-0.5 rounded-full">
+                                                                                {unreadCount} new
+                                                                        </span>
+                                                                )}
                                                         </div>
-                                                        <ul className="py-2 max-h-64 overflow-y-auto">
-                                                                {notifications.map(notif => (
-                                                                        <li key={notif.id} className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 cursor-pointer">
-                                                                                <p className="text-sm text-gray-700 dark:text-gray-300">{notif.message}</p>
-                                                                                <p className="text-xs text-gray-500 dark:text-gray-400">{notif.time}</p>
-                                                                        </li>
-                                                                ))}
-                                                        </ul>
+                                                        {notifications.length === 0 ? (
+                                                                <div className="p-8 text-center">
+                                                                        <Bell className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                                                                        <p className="text-sm text-gray-500 dark:text-gray-400">No notifications</p>
+                                                                </div>
+                                                        ) : (
+                                                                <ul className="py-2 max-h-64 overflow-y-auto">
+                                                                        {notifications.map(notif => (
+                                                                                <li 
+                                                                                        key={notif.id} 
+                                                                                        className={`px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 cursor-pointer border-l-2 ${
+                                                                                                notif.isRead === '0' || notif.isRead === 0 
+                                                                                                        ? 'border-red-500 bg-red-50 dark:bg-slate-800' 
+                                                                                                        : 'border-transparent'
+                                                                                        }`}
+                                                                                >
+                                                                                        <p className="text-sm text-gray-700 dark:text-gray-300 font-medium">{notif.sender}</p>
+                                                                                        <p className="text-sm text-gray-600 dark:text-gray-400">{notif.message}</p>
+                                                                                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{notif.time}</p>
+                                                                                </li>
+                                                                        ))}
+                                                                </ul>
+                                                        )}
                                                 </div>
                                         )}
                                 </div>
 
                                 <div className="relative group" ref={profileRef}>
                                         <button onClick={() => toggleDropdown('profile')} className='flex items-center gap-2 cursor-pointer'>
-                                                <div className='w-10 h-10 rounded-full bg-gray-300 overflow-hidden'>
-                                                        <img src={user.profilePictureURL || DefaultProfilePic} alt='User' className='w-full h-full object-cover' />
-                                                </div>
+                                                {user?.profilePictureURL ? (
+                                                        <div className='w-10 h-10 rounded-full bg-gray-300 overflow-hidden'>
+                                                                <img src={user.profilePictureURL} alt='User' className='w-full h-full object-cover' />
+                                                        </div>
+                                                ) : (
+                                                        <div className='w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 flex items-center justify-center'>
+                                                                <span className='text-white font-semibold text-sm'>
+                                                                        {user?.firstName?.[0]?.toUpperCase() || 'T'}
+                                                                        {user?.lastName?.[0]?.toUpperCase() || ''}
+                                                                </span>
+                                                        </div>
+                                                )}
                                                 <div className='hidden md:block'>
-                                                        <p className='text-sm font-semibold text-gray-800 dark:text-gray-200'>{user.fullName}</p>
-                                                        <p className='text-xs text-gray-500 dark:text-gray-400'>{user.studentNumber}</p>
+                                                        <p className='text-sm font-semibold text-gray-800 dark:text-gray-200'>{user?.fullName || 'Teacher'}</p>
+                                                        <p className='text-xs text-gray-500 dark:text-gray-400'>{user?.employeeNumber || user?.studentNumber || ''}</p>
                                                 </div>
                                         </button>
                                         <Tooltip text="Profile Settings" />

@@ -106,32 +106,35 @@ class User {
         }
     }
 
-    public function getTeacherByUserId($UserID){
+    public function getTeacherByUserId($userId){
         $query = "
             SELECT 
-                u.UserID,
-                tp.EmployeeNumber,
-                pp.PasswordHash,
-                CONCAT(p.FirstName, ' ', p.LastName) AS FullName,
-                u.UserType,
-                u.AccountStatus
+                u.UserID, u.EmailAddress, u.UserType, u.AccountStatus, u.LastLoginDate,
+                p.ProfileID, p.FirstName, p.LastName, p.MiddleName,
+                CONCAT_WS(' ', p.FirstName, p.MiddleName, p.LastName) AS FullName,
+                CAST(p.EncryptedPhoneNumber AS CHAR) AS PhoneNumber,
+                CAST(p.EncryptedAddress AS CHAR) AS Address,
+                p.ProfilePictureURL,
+                tp.TeacherProfileID, tp.EmployeeNumber, tp.Specialization, tp.HireDate
             FROM 
-                teacherprofile tp
+                user u
             JOIN 
-                profile p ON tp.ProfileID = p.ProfileID
+                profile p ON u.UserID = p.UserID
             JOIN 
-                user u ON p.UserID = u.UserID
+                teacherprofile tp ON p.ProfileID = tp.ProfileID
+            LEFT JOIN 
+                passwordpolicy pp ON u.UserID = pp.UserID
             WHERE 
-                tp.EmployeeNumber = :employeeNumber AND u.UserType = 'Teacher'";
+                u.UserID = :userId AND u.UserType = 'Teacher'
+        ";
 
         try {
             $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':employeeNumber', $UserID);
+            $stmt->bindParam(':userId', $userId);
             $stmt->execute();
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
-            // Optional: Log the error for debugging
-            error_log("Teacher login error: " . $e->getMessage());
+            error_log("Get teacher by UserID error: " . $e->getMessage());
             return false;
         }
     }

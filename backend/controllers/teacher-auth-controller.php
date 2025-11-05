@@ -193,28 +193,36 @@ class TeacherAuthController {
     private function createProfile($userId, $data) {
         // For encrypted fields, we'll insert NULL if no data provided
         // In production, you should use AES_ENCRYPT with a proper encryption key
-        if (!empty($data['phoneNumber']) || !empty($data['address'])) {
-            $query = "INSERT INTO profile (UserID, FirstName, LastName, MiddleName, EncryptedPhoneNumber, EncryptedAddress) 
-                      VALUES (:userId, :firstName, :lastName, :middleName, :phoneNumber, :address)";
-        } else {
-            // Simplified query if no phone/address
-            $query = "INSERT INTO profile (UserID, FirstName, LastName, MiddleName) 
-                      VALUES (:userId, :firstName, :lastName, :middleName)";
-        }
         
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':userId', $userId);
-        $stmt->bindParam(':firstName', $data['firstName']);
-        $stmt->bindParam(':lastName', $data['lastName']);
-        
+        // Prepare variables for bindParam (must be passed by reference)
+        $firstName = $data['firstName'];
+        $lastName = $data['lastName'];
         $middleName = $data['middleName'] ?? null;
-        $stmt->bindParam(':middleName', $middleName);
         
         if (!empty($data['phoneNumber']) || !empty($data['address'])) {
             $phoneNumber = $data['phoneNumber'] ?? null;
             $address = $data['address'] ?? null;
+            
+            $query = "INSERT INTO profile (UserID, FirstName, LastName, MiddleName, EncryptedPhoneNumber, EncryptedAddress) 
+                      VALUES (:userId, :firstName, :lastName, :middleName, :phoneNumber, :address)";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':userId', $userId);
+            $stmt->bindParam(':firstName', $firstName);
+            $stmt->bindParam(':lastName', $lastName);
+            $stmt->bindParam(':middleName', $middleName);
             $stmt->bindParam(':phoneNumber', $phoneNumber);
             $stmt->bindParam(':address', $address);
+        } else {
+            // Simplified query if no phone/address
+            $query = "INSERT INTO profile (UserID, FirstName, LastName, MiddleName) 
+                      VALUES (:userId, :firstName, :lastName, :middleName)";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':userId', $userId);
+            $stmt->bindParam(':firstName', $firstName);
+            $stmt->bindParam(':lastName', $lastName);
+            $stmt->bindParam(':middleName', $middleName);
         }
         
         if ($stmt->execute()) {
@@ -227,14 +235,19 @@ class TeacherAuthController {
      * Create Teacher Profile
      */
     private function createTeacherProfile($profileId, $data) {
+        // Prepare variables for bindParam (must be passed by reference)
+        $employeeNumber = $data['employeeNumber'];
+        $specialization = $data['specialization'] ?? null;
+        $hireDate = $data['hireDate'] ?? date('Y-m-d');
+        
         $query = "INSERT INTO teacherprofile (ProfileID, EmployeeNumber, Specialization, HireDate) 
                   VALUES (:profileId, :employeeNumber, :specialization, :hireDate)";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':profileId', $profileId);
-        $stmt->bindParam(':employeeNumber', $data['employeeNumber']);
-        $stmt->bindParam(':specialization', $data['specialization'] ?? null);
-        $stmt->bindParam(':hireDate', $data['hireDate'] ?? date('Y-m-d'));
+        $stmt->bindParam(':employeeNumber', $employeeNumber);
+        $stmt->bindParam(':specialization', $specialization);
+        $stmt->bindParam(':hireDate', $hireDate);
         
         if ($stmt->execute()) {
             return $this->conn->lastInsertId();

@@ -51,7 +51,15 @@ INSERT IGNORE INTO permission (PermissionCode, ModuleName, Description) VALUES
 ('view_own_profile', 'Profile', 'View own teacher profile'),
 ('edit_own_profile', 'Profile', 'Edit own teacher profile');
 
--- 3. Assign Permissions to Teacher Role
+-- 3. Create Super Teacher Role (if it doesn't exist)
+INSERT IGNORE INTO role (RoleName, Description, IsActive)
+VALUES ('Super Teacher', 'Role with elevated permissions for experienced teachers', 1);
+
+-- Get the RoleID for Super Teacher
+SET @superTeacherRoleID = (SELECT RoleID FROM role WHERE RoleName = 'Super Teacher' LIMIT 1);
+
+-- 4. Assign Permissions to Teacher Role (WITHOUT schedule creation/editing)
+-- Only proceed if Teacher role exists
 INSERT IGNORE INTO rolepermission (RoleID, PermissionID)
 SELECT @teacherRoleID, PermissionID
 FROM permission
@@ -62,10 +70,11 @@ WHERE PermissionCode IN (
     'manage_grades',    
     'submit_grades',
     'view_attendance',
-    'manage_attendance',
+    'manage_attendance',    
     'edit_attendance',
     'view_schedules',
     'view_own_schedule',
+    -- NOTE: Teacher CANNOT create_schedule or edit_own_schedule
     'view_classes',
     'manage_class_content',
     'view_announcements',
@@ -76,9 +85,41 @@ WHERE PermissionCode IN (
     'generate_class_reports',
     'view_own_profile',
     'edit_own_profile'
-);
+)
+AND @teacherRoleID IS NOT NULL;
 
--- 4. Verify Setup
+-- 5. Assign ALL Permissions to Super Teacher Role
+-- Only proceed if Super Teacher role exists
+INSERT IGNORE INTO rolepermission (RoleID, PermissionID)
+SELECT @superTeacherRoleID, PermissionID
+FROM permission
+WHERE PermissionCode IN (
+    'view_students',
+    'view_student_profiles',
+    'view_grades',
+    'manage_grades',    
+    'submit_grades',
+    'view_attendance',
+    'manage_attendance',    
+    'edit_attendance',
+    'view_schedules',
+    'view_own_schedule',
+    'create_schedule',           -- Super Teacher CAN create schedules
+    'edit_own_schedule',         -- Super Teacher CAN edit schedules
+    'view_classes',
+    'manage_class_content',
+    'view_announcements',
+    'create_announcements',
+    'edit_own_announcements',
+    'delete_own_announcements',
+    'view_reports',
+    'generate_class_reports',
+    'view_own_profile',
+    'edit_own_profile'
+)
+AND @superTeacherRoleID IS NOT NULL;
+
+-- 6. Verify Setup
 SELECT 
     r.RoleName,
     p.PermissionCode,
@@ -100,13 +141,6 @@ JOIN rolepermission rp ON r.RoleID = rp.RoleID
 JOIN permission p ON rp.PermissionID = p.PermissionID
 WHERE r.RoleName = 'Super Teacher'
 ORDER BY p.ModuleName, p.PermissionCode;
-
--- 5. Add Super Teacher Role
-INSERT IGNORE INTO role (RoleName, Description, IsActive)
-VALUES ('Super Teacher', 'Role with elevated permissions for experienced teachers', 1);
-
--- Get the RoleID for Super Teacher
-SET @superTeacherRoleID = (SELECT RoleID FROM role WHERE RoleName = 'Super Teacher' LIMIT 1);
 -- ========================================
 -- Sample Test Teacher Account
 -- ========================================

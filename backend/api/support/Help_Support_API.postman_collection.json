@@ -1,0 +1,232 @@
+{
+  "info": {
+    "name": "Help Support API",
+    "description": "Complete API collection for testing the Help Support ticket system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"TEACH-2025-002\",\n  \"password\": \"teacher123\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5173/api/auth/login.php",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5173",
+              "path": ["api", "auth", "login.php"]
+            },
+            "description": "Login first to establish session. Use teacher credentials."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tickets",
+      "item": [
+        {
+          "name": "Submit Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Login Issue\",\n  \"message\": \"I cannot login with my credentials. I have tried resetting my password but it still doesn't work.\",\n  \"priority\": \"High\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5173/api/support/submit-ticket.php",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5173",
+              "path": ["api", "support", "submit-ticket.php"]
+            },
+            "description": "Create a new support ticket with initial message and priority"
+          },
+          "response": []
+        },
+        {
+          "name": "Get My Tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5173/api/support/get-my-tickets.php",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5173",
+              "path": ["api", "support", "get-my-tickets.php"]
+            },
+            "description": "Retrieve all tickets for the logged-in user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ticket Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5173/api/support/get-ticket-details.php?ticketId=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5173",
+              "path": ["api", "support", "get-ticket-details.php"],
+              "query": [
+                {
+                  "key": "ticketId",
+                  "value": "1",
+                  "description": "The ID of the ticket to retrieve"
+                }
+              ]
+            },
+            "description": "Get full details of a specific ticket"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Ticket Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": 1,\n  \"status\": \"Closed\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5173/api/support/update-ticket-status.php",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5173",
+              "path": ["api", "support", "update-ticket-status.php"]
+            },
+            "description": "Update the status of a ticket. Valid statuses: Open, In Progress, On Hold, Closed"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ticket Statistics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5173/api/support/get-ticket-stats.php",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5173",
+              "path": ["api", "support", "get-ticket-stats.php"]
+            },
+            "description": "Get ticket statistics for the logged-in user (total, open, closed, etc.)"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Tickets",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5173/api/support/search-tickets.php?keyword=login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5173",
+              "path": ["api", "support", "search-tickets.php"],
+              "query": [
+                {
+                  "key": "keyword",
+                  "value": "login",
+                  "description": "Search term to find in ticket subjects"
+                }
+              ]
+            },
+            "description": "Search tickets by keyword in subject"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Get Ticket Messages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:5173/api/support/get-ticket-messages.php?ticketId=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5173",
+              "path": ["api", "support", "get-ticket-messages.php"],
+              "query": [
+                {
+                  "key": "ticketId",
+                  "value": "1",
+                  "description": "The ID of the ticket"
+                }
+              ]
+            },
+            "description": "Get all messages (conversation thread) for a ticket"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ticketId\": 1,\n  \"message\": \"I tried resetting my password again but still cannot login. Please help!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:5173/api/support/add-message.php",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "5173",
+              "path": ["api", "support", "add-message.php"]
+            },
+            "description": "Add a new message to an existing ticket"
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5173",
+      "type": "string"
+    }
+  ]
+}

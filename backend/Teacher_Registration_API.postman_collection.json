@@ -1,0 +1,295 @@
+{
+  "info": {
+    "name": "Teacher Registration API",
+    "description": "API endpoints for teacher registration and authentication",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register Teacher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teacher@gymnazo.edu\",\n  \"password\": \"SecurePass123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"middleName\": \"Smith\",\n  \"employeeNumber\": \"TEACH-2025-001\",\n  \"phoneNumber\": \"09171234567\",\n  \"address\": \"123 Main Street, Manila\",\n  \"specialization\": \"Mathematics\",\n  \"hireDate\": \"2025-01-15\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/register-teacher.php",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "gymnazo-christian-academy-teacher-side",
+                "backend",
+                "api",
+                "auth",
+                "register-teacher.php"
+              ]
+            },
+            "description": "Register a new teacher account"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"teacher@gymnazo.edu\",\n  \"password\": \"SecurePass123!\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"employeeNumber\": \"TEACH-2025-001\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/register-teacher.php",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "path": [
+                    "gymnazo-christian-academy-teacher-side",
+                    "backend",
+                    "api",
+                    "auth",
+                    "register-teacher.php"
+                  ]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Teacher account created successfully!\",\n  \"data\": {\n    \"userId\": 5,\n    \"profileId\": 5,\n    \"teacherProfileId\": 3,\n    \"employeeNumber\": \"TEACH-2025-001\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login Teacher",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_number\": \"TEACH-2025-001\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/login.php",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "gymnazo-christian-academy-teacher-side",
+                "backend",
+                "api",
+                "auth",
+                "login.php"
+              ]
+            },
+            "description": "Login with employee number and password"
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"employee_number\": \"TEACH-2025-001\",\n  \"password\": \"SecurePass123!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/login.php",
+                  "protocol": "http",
+                  "host": [
+                    "localhost"
+                  ],
+                  "path": [
+                    "gymnazo-christian-academy-teacher-side",
+                    "backend",
+                    "api",
+                    "auth",
+                    "login.php"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful!\",\n  \"user\": {\n    \"fullName\": \"John Doe\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Test Cases",
+      "item": [
+        {
+          "name": "Register - Missing Fields",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"incomplete@gymnazo.edu\",\n  \"password\": \"Test123!\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/register-teacher.php",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "gymnazo-christian-academy-teacher-side",
+                "backend",
+                "api",
+                "auth",
+                "register-teacher.php"
+              ]
+            },
+            "description": "Test validation for missing required fields"
+          }
+        },
+        {
+          "name": "Register - Duplicate Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"teacher@gymnazo.edu\",\n  \"password\": \"AnotherPass123!\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"employeeNumber\": \"TEACH-2025-002\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/register-teacher.php",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "gymnazo-christian-academy-teacher-side",
+                "backend",
+                "api",
+                "auth",
+                "register-teacher.php"
+              ]
+            },
+            "description": "Test validation for duplicate email address"
+          }
+        },
+        {
+          "name": "Register - Short Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newteacher@gymnazo.edu\",\n  \"password\": \"short\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"employeeNumber\": \"TEACH-2025-003\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/register-teacher.php",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "gymnazo-christian-academy-teacher-side",
+                "backend",
+                "api",
+                "auth",
+                "register-teacher.php"
+              ]
+            },
+            "description": "Test password length validation"
+          }
+        },
+        {
+          "name": "Register - Invalid Email",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"ValidPass123!\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\",\n  \"employeeNumber\": \"TEACH-2025-004\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/register-teacher.php",
+              "protocol": "http",
+              "host": [
+                "localhost"
+              ],
+              "path": [
+                "gymnazo-christian-academy-teacher-side",
+                "backend",
+                "api",
+                "auth",
+                "register-teacher.php"
+              ]
+            },
+            "description": "Test email format validation"
+          }
+        }
+      ]
+    }
+  ]
+}

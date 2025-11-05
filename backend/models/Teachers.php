@@ -48,6 +48,8 @@ class Teachers{
                 profile p ON tp.ProfileID = p.ProfileID
             JOIN 
                 user u ON p.UserID = u.UserID
+            LEFT JOIN 
+                passwordpolicy pp ON u.UserID = pp.UserID
             WHERE 
                 tp.EmployeeNumber = :EmployeeNumber AND u.UserType = 'Teacher'";
 
