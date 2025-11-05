@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Inbox from '../common/application/inbox/inbox.Jsx';
+import Inbox from '../common/application/inbox/inbox.jsx';
 import Screening from '../common/application/screening/screening';
 
 
