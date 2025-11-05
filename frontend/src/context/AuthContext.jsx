@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../config/api';
 
 const AuthContext = createContext(null);
 
@@ -12,7 +13,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       try {
         const response = await axios.get(
-          'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/get-current-user.php',
+          API_ENDPOINTS.GET_CURRENT_USER,
           { withCredentials: true }
         );
         
@@ -35,7 +36,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     try {
       const response = await axios.post(
-        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/login.php',
+        //change this when deploying
+        //'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/login.php',
+        API_ENDPOINTS.LOGIN,
         { employee_number: username, password }, // Fixed: backend expects employee_number
         {
           withCredentials: true,
