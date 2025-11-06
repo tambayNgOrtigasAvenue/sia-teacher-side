@@ -265,7 +265,7 @@ ENCRYPTION_KEY=your-32-character-encryption-key
 
 ```powershell
 # Create database
-mysql -u root -p -e "CREATE DATABASE gymnadb;"
+mysql -u root -p -e "CREATE DATABASE gymnazo_db;"
 
 # Import schema
 mysql -u root -p gymnadb < docker\mysql\init.sql
@@ -633,7 +633,7 @@ All critical operations are logged in `auditlog`:
 1. Verify MySQL service is running in XAMPP
 2. Check database credentials in backend/.env:
    DB_HOST=localhost
-   DB_NAME=gymnadb
+   DB_NAME=gymnazo_db
    DB_USER=root
    DB_PASS=
 3. Test connection:
@@ -741,9 +741,9 @@ All critical operations are logged in `auditlog`:
 
 - 📖 **Documentation**: Check `/frontend/docs/*.md` files
 - 🐛 **Bug Reports**: Open an issue on GitHub
-- 💬 **Discussions**: Join our community forum
-- 📧 **Email Support**: support@gymnazo.edu
-- 📱 **Discord**: Join our development server
+- 💬 **Discussions**: Join our messenger group
+- 📧 **Email Support**: none
+- 📱 **Discord**: none
 
 ---
 
@@ -756,7 +756,7 @@ We welcome contributions from the community! Here's how you can help:
 1. **Fork the Repository**
    ```powershell
    # Click "Fork" on GitHub
-   git clone https://github.com/YOUR-USERNAME/sia-teacher-side.git
+   git clone https://github.com/tambatNgOrtigasAvenue/sia-teacher-side.git
    ```
 
 2. **Create a Feature Branch**
@@ -828,7 +828,6 @@ Update: Announcement form validation rules
 - 🐛 **Bug Fixes**: Check GitHub issues
 - ✨ **New Features**: See project roadmap
 - 📝 **Documentation**: Improve guides and docs
-- 🌐 **Translations**: Multi-language support
 - 🎨 **UI/UX**: Design improvements
 - ⚡ **Performance**: Optimization
 - 🧪 **Testing**: Unit and integration tests
@@ -837,7 +836,7 @@ Update: Announcement form validation rules
 
 ```powershell
 # 1. Fork and clone
-git clone https://github.com/YOUR-USERNAME/sia-teacher-side.git
+git clone https://github.com/tambayNgOrtigasAvenue/sia-teacher-side.git
 cd sia-teacher-side
 
 # 2. Add upstream remote
@@ -864,9 +863,13 @@ git push origin feature/your-feature
 
 ### **Development Team**
 - **Lead Developer**: [TambayNgOrtigasAvenue](https://github.com/tambayNgOrtigasAvenue)
-- **Project Manager**: Gymnazo Christian Academy IT Department
-- **UI/UX Design**: Design Team
-- **Quality Assurance**: QA Team
+- **Project Manager**: Allyana Cabiling
+- **UI/UX Design**: Legaspina, Nath
+    Peta, Camille
+    Tolores, Lorea
+    Garcia, Alexandria
+
+- **Quality Assurance**: None
 
 ### **Open Source Libraries**
 
@@ -898,7 +901,7 @@ We're grateful to the following projects:
 - 🎓 **Gymnazo Christian Academy** - For trusting us with this project
 - 👨‍🏫 **Teachers & Staff** - For valuable feedback and testing
 - 💻 **Open Source Community** - For amazing tools and libraries
-- 📚 **Stack Overflow** - For countless solutions
+- 📚 **Stack Overflow, ChatGPT, and Gemini PRO** - For countless solutions
 - 🎨 **Figma Community** - For design inspiration
 
 ### **Inspiration**
@@ -945,7 +948,7 @@ SOFTWARE.
 ---
 
 **Questions or Issues?**  
-📧 Email: support@gymnazo.edu  
+📧 Email: none
 🐛 Issues: [GitHub Issues](https://github.com/tambayNgOrtigasAvenue/sia-teacher-side/issues)  
 ⭐ Star us on GitHub if this project helped you!
 
