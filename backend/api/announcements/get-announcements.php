@@ -1,10 +1,4 @@
 <?php
-/**
- * API Endpoint: Get Announcements
- * Method: GET
- * Returns announcements visible to teachers
- */
-
 session_start();
 
 ini_set('display_errors', 1);
@@ -40,24 +34,22 @@ if (!$db) {
 }
 
 try {
-    // Get limit parameter (default to 5 for dashboard)
     $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 5;
-    
-    // Get announcements
+
     $query = "
         SELECT 
             a.AnnouncementID as id,
             a.Title as title,
             a.Content as message,
-            a.CreatedAt as createdAt,
+            a.PublishDate as createdAt,
             CONCAT(p.FirstName, ' ', p.LastName) as createdBy
         FROM announcement a
-        JOIN user u ON a.CreatedByUserID = u.UserID
+        JOIN user u ON a.AuthorUserID = u.UserID
         JOIN profile p ON u.UserID = p.UserID
-        WHERE a.TargetAudience IN ('All', 'Teachers')
+        WHERE a.TargetAudience IN ('All Users', 'Teachers')
             AND a.IsActive = 1
             AND (a.ExpiryDate IS NULL OR a.ExpiryDate >= CURDATE())
-        ORDER BY a.CreatedAt DESC
+        ORDER BY a.PublishDate DESC
         LIMIT :limit
     ";
     

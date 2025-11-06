@@ -62,20 +62,20 @@ try {
     // Get teacher's schedule
     $scheduleQuery = "
         SELECT 
-            s.ScheduleID,
+            cs.ScheduleID,
             sub.SubjectName as subject,
             CONCAT(gl.LevelName, ' - Section ', sec.SectionName) as grade,
-            s.DayOfWeek as day,
-            CONCAT(TIME_FORMAT(s.StartTime, '%h:%i %p'), ' - ', TIME_FORMAT(s.EndTime, '%h:%i %p')) as time,
-            s.RoomNumber as room
-        FROM schedule s
-        JOIN subject sub ON s.SubjectID = sub.SubjectID
-        JOIN section sec ON s.SectionID = sec.SectionID
+            cs.DayOfWeek as day,
+            CONCAT(TIME_FORMAT(cs.StartTime, '%h:%i %p'), ' - ', TIME_FORMAT(cs.EndTime, '%h:%i %p')) as time,
+            cs.RoomNumber as room
+        FROM classschedule cs
+        JOIN subject sub ON cs.SubjectID = sub.SubjectID
+        JOIN section sec ON cs.SectionID = sec.SectionID
         JOIN gradelevel gl ON sec.GradeLevelID = gl.GradeLevelID
-        WHERE s.TeacherProfileID = :teacherProfileId
+        WHERE cs.TeacherProfileID = :teacherProfileId
         ORDER BY 
-            FIELD(s.DayOfWeek, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
-            s.StartTime
+            FIELD(cs.DayOfWeek, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),
+            cs.StartTime
     ";
     
     $scheduleStmt = $db->prepare($scheduleQuery);

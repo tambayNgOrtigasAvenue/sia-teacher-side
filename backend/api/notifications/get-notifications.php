@@ -46,16 +46,15 @@ try {
     // Get notifications for the teacher
     $query = "
         SELECT 
-            n.NotificationID as id,
-            n.Title as sender,
-            n.Message as message,
-            n.IsRead as isRead,
-            DATE_FORMAT(n.CreatedAt, '%h:%i %p') as time,
-            n.CreatedAt as createdAt
-        FROM notification n
-        WHERE n.RecipientUserID = :userId
-            AND n.IsDeleted = 0
-        ORDER BY n.CreatedAt DESC
+            nl.LogID as id,
+            nl.Title as sender,
+            nl.Message as message,
+            nl.IsRead as isRead,
+            DATE_FORMAT(nl.SentAt, '%h:%i %p') as time,
+            nl.SentAt as createdAt
+        FROM notificationlog nl
+        WHERE nl.RecipientUserID = :userId
+        ORDER BY nl.SentAt DESC
         LIMIT :limit
     ";
     

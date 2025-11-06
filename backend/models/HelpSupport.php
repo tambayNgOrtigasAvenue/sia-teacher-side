@@ -1,11 +1,5 @@
 <?php
 
-/**
- * HelpSupport Model
- * 
- * Handles all operations related to support tickets and ticket messages.
- * Manages ticket lifecycle: creation, assignment, resolution, and messaging.
- */
 class HelpSupport {
     private $conn;
     private $table_tickets = "supportticket";
@@ -13,7 +7,6 @@ class HelpSupport {
     private $table_users = "user";
     private $table_profiles = "profile";
 
-    // Support Ticket Properties
     public $TicketID;
     public $UserID;
     public $Subject;
@@ -24,7 +17,6 @@ class HelpSupport {
     public $AssignedToUserID;
     public $ResolvedByUserID;
 
-    // Ticket Message Properties
     public $MessageID;
     public $Message;
     public $SenderUserID;
@@ -49,11 +41,11 @@ class HelpSupport {
             
             $stmt = $this->conn->prepare($query);
             
-            // Set default values
+            
             $status = $this->TicketStatus ?? 'Open';
             $priority = $this->TicketPriority ?? 'Medium';
             
-            // Bind parameters
+            
             $stmt->bindParam(':userID', $this->UserID);
             $stmt->bindParam(':subject', $this->Subject);
             $stmt->bindParam(':status', $status);
