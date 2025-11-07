@@ -1,0 +1,104 @@
+<?php
+/**
+ * API Endpoint: Get Teacher Profile
+ * Method: GET
+ * Returns the complete profile information for the logged-in teacher
+ */
+
+session_start();
+
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+require_once __DIR__ . '/../../config/cors.php';
+require_once __DIR__ . '/../../config/db.php';
+
+header("Content-Type: application/json; charset=UTF-8");
+
+// Only allow GET requests
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Method not allowed.']);
+    exit();
+}
+
+// Check authentication
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Not authenticated.']);
+    exit();
+}
+
+// Get database connection
+$database = new Database();
+$db = $database->getConnection();
+
+if (!$db) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Database connection failed.']);
+    exit();
+}
+
+try {
+    // Get teacher profile information
+    $query = "
+        SELECT 
+            u.UserID,
+            u.Email,
+            CONCAT(p.FirstName, ' ', IFNULL(p.MiddleName, ''), ' ', p.LastName) as fullName,
+            p.ProfilePictureURL as profilePicture,
+            tp.EmployeeNumber,
+            tp.Specialization,
+            tp.HireDate,
+            'Regular' as accountType
+        FROM user u
+        JOIN profile p ON u.UserID = p.UserID
+        JOIN teacherprofile tp ON p.ProfileID = tp.ProfileID
+        WHERE u.UserID = :userId
+    ";
+    
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(':userId', $_SESSION['user_id']);
+    $stmt->execute();
+    $profile = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$profile) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'Teacher profile not found.']);
+        exit();
+    }
+    
+    // Calculate age from hire date (placeholder - should use birthdate if available)
+    $age = '';
+    $birthday = '';
+    
+    // Format the response
+    $response = [
+        'fullName' => $profile['fullName'],
+        'email' => $profile['Email'],
+        'age' => $age,
+        'birthday' => $birthday,
+        'phoneNumber' => '', // Phone number is encrypted, needs decryption
+        'accountType' => $profile['accountType'],
+        'religion' => '', // Not in current schema
+        'motherTongue' => '', // Not in current schema
+        'profilePicture' => $profile['profilePicture'],
+        'employeeNumber' => $profile['EmployeeNumber'],
+        'specialization' => $profile['Specialization'],
+        'hireDate' => $profile['HireDate']
+    ];
+    
+    http_response_code(200);
+    echo json_encode([
+        'success' => true,
+        'data' => $response
+    ]);
+    
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Error fetching profile: ' . $e->getMessage()
+    ]);
+}
+?>

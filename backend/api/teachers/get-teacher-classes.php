@@ -64,15 +64,13 @@ try {
         SELECT DISTINCT
             sec.SectionID as id,
             gl.LevelName as grade,
-            CONCAT('Section ', sec.SectionName) as section,
-            sub.SubjectName as subject,
+            sec.SectionName as section,
             'active' as status,
             0 as isFavorited
-        FROM schedule s
-        JOIN subject sub ON s.SubjectID = sub.SubjectID
-        JOIN section sec ON s.SectionID = sec.SectionID
+        FROM classschedule cs
+        JOIN section sec ON cs.SectionID = sec.SectionID
         JOIN gradelevel gl ON sec.GradeLevelID = gl.GradeLevelID
-        WHERE s.TeacherProfileID = :teacherProfileId
+        WHERE cs.TeacherProfileID = :teacherProfileId
         ORDER BY gl.LevelName, sec.SectionName
     ";
     
