@@ -1,6 +1,6 @@
 <?php
 
-$allowed_origin = 'http://localhost:5173'; //pwede to gawing *  pero yan nalan hahahahaha
+$allowed_origin = 'http://localhost:5173';
 
 if (isset($_SERVER['HTTP_ORIGIN']) && $_SERVER['HTTP_ORIGIN'] === $allowed_origin) {
     header("Access-Control-Allow-Origin: " . $allowed_origin);
