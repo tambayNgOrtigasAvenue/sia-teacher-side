@@ -19,6 +19,7 @@ const TeachingSchedulePage = () => {
   const [subjects, setSubjects] = useState([]);
   const [sectionsData, setSectionsData] = useState([]);
   const [activeSchoolYear, setActiveSchoolYear] = useState(null);
+  const [teachers, setTeachers] = useState([]);
   const [editFormData, setEditFormData] = useState({
     teacher: '',
     subject: '',
@@ -29,28 +30,15 @@ const TeachingSchedulePage = () => {
   const [addClassFormData, setAddClassFormData] = useState({
     gradeLevelId: '',
     sectionId: '',
-    subjectId: '',
     dayOfWeek: 'Monday',
     startTime: '08:00',
     endTime: '09:00',
     roomNumber: ''
   });
+  const [teacherSections, setTeacherSections] = useState([]);
+  const [selectedSection, setSelectedSection] = useState(null);
   const [createFormData, setCreateFormData] = useState({
-    teacher: '',
-    gradeSection: 'Grade 1 - Section A',
-    room: '103',
-    day: 'Monday to Friday',
-    timeSlots: [
-      { time: '6:30 AM - 7:30 AM', subject: '' },
-      { time: '7:30 AM - 8:30 AM', subject: '' },
-      { time: '8:30 AM - 9:30 AM', subject: '' },
-      { time: '10:00 AM - 11:00 AM', subject: '' },
-      { time: '11:00 AM - 12:00 PM', subject: '' },
-      { time: '12:00 PM - 1:00 PM', subject: '' },
-      { time: '1:00 PM - 2:00 PM', subject: '' },
-      { time: '3:00 PM - 4:00 PM', subject: '' },
-      { time: '4:00 PM - 5:00 PM', subject: '' }
-    ]
+    teacher: ''
   });
 
   // Fetch initial options on mount
@@ -65,18 +53,35 @@ const TeachingSchedulePage = () => {
 
   const fetchOptions = async () => {
     try {
+      console.log('Fetching options (grade levels, subjects, teachers)...');
       const response = await axios.get(
         'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/schedules/get-options.php',
         { withCredentials: true }
       );
 
+      console.log('Options response:', response.data);
+
       if (response.data.success) {
-        setGradeLevels(response.data.data.gradeLevels || []);
-        setSubjects(response.data.data.subjects || []);
+        const gradeLevelsData = response.data.data.gradeLevels || [];
+        const subjectsData = response.data.data.subjects || [];
+        const teachersData = response.data.data.teachers || [];
+        
+        console.log('Grade Levels:', gradeLevelsData);
+        console.log('Subjects:', subjectsData);
+        console.log('Teachers:', teachersData);
+        
+        setGradeLevels(gradeLevelsData);
+        setSubjects(subjectsData);
         setActiveSchoolYear(response.data.data.activeSchoolYear);
+        setTeachers(teachersData);
+      } else {
+        console.error('Failed to fetch options:', response.data.message);
+        toast.error('Failed to load form options');
       }
     } catch (error) {
       console.error('Error fetching options:', error);
+      console.error('Error details:', error.response?.data);
+      toast.error('Error loading grade levels and subjects');
     }
   };
 
@@ -119,6 +124,39 @@ const TeachingSchedulePage = () => {
       toast.error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Fetch teacher's assigned sections
+  const fetchTeacherSections = async (teacherId) => {
+    if (!teacherId) {
+      setTeacherSections([]);
+      setSelectedSection(null);
+      return;
+    }
+
+    try {
+      console.log('Fetching sections for teacher:', teacherId);
+      const response = await axios.get(
+        `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/schedules/get-teacher-sections.php?teacherId=${teacherId}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        console.log('Teacher sections:', response.data.data);
+        setTeacherSections(response.data.data);
+        // Auto-select first section if available
+        if (response.data.data.length > 0) {
+          setSelectedSection(response.data.data[0]);
+        }
+      } else {
+        toast.error(response.data.message);
+        setTeacherSections([]);
+      }
+    } catch (error) {
+      console.error('Error fetching teacher sections:', error);
+      toast.error('Failed to load teacher sections');
+      setTeacherSections([]);
     }
   };
 
@@ -405,50 +443,39 @@ const TeachingSchedulePage = () => {
     setIsCreateModalOpen(true);
   };
 
+  const handleTeacherChange = (teacherId) => {
+    setCreateFormData({ teacher: teacherId });
+    fetchTeacherSections(teacherId);
+  };
+
   const handleCancelCreate = () => {
     setIsCreateModalOpen(false);
     setCreateFormData({
-      teacher: '',
-      gradeSection: 'Grade 1 - Section A',
-      room: '103',
-      day: 'Monday to Friday',
-      timeSlots: [
-        { time: '6:30 AM - 7:30 AM', subject: '' },
-        { time: '7:30 AM - 8:30 AM', subject: '' },
-        { time: '8:30 AM - 9:30 AM', subject: '' },
-        { time: '10:00 AM - 11:00 AM', subject: '' },
-        { time: '11:00 AM - 12:00 PM', subject: '' },
-        { time: '12:00 PM - 1:00 PM', subject: '' },
-        { time: '1:00 PM - 2:00 PM', subject: '' },
-        { time: '3:00 PM - 4:00 PM', subject: '' },
-        { time: '4:00 PM - 5:00 PM', subject: '' }
-      ]
+      teacher: ''
     });
-  };
-
-  const handleSubjectChange = (index, subject) => {
-    const updatedTimeSlots = [...createFormData.timeSlots];
-    updatedTimeSlots[index].subject = subject;
-    setCreateFormData({ ...createFormData, timeSlots: updatedTimeSlots });
+    setTeacherSections([]);
+    setSelectedSection(null);
   };
 
   const handleSubmitSchedule = (e) => {
     e.preventDefault();
     // Validate form
     if (!createFormData.teacher) {
-      alert('Please select a teacher');
+      toast.error('Please select a teacher');
       return;
     }
     
-    console.log('Submitting schedule:', createFormData);
-    // TODO: API call to save schedule
+    if (!selectedSection) {
+      toast.error('No section assigned to this teacher');
+      return;
+    }
     
-    // Show success message
-    const toast = document.createElement('div');
-    toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-    toast.textContent = 'Schedule created successfully!';
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    console.log('Schedule info:', {
+      teacher: createFormData.teacher,
+      section: selectedSection
+    });
+    
+    toast.success('Schedule information displayed successfully!');
     
     // Close modal and reset form
     handleCancelCreate();
@@ -871,17 +898,36 @@ const TeachingSchedulePage = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Grade Level *
                 </label>
-                <select
-                  value={addClassFormData.gradeLevelId}
-                  onChange={(e) => handleGradeLevelChange(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                  required
-                >
-                  <option value="">Select Grade Level</option>
-                  {gradeLevels.filter(grade => grade.id <= 6).map(grade => (
-                    <option key={grade.id} value={grade.id}>Grade {grade.name}</option>
-                  ))}
-                </select>
+                {gradeLevels.length === 0 ? (
+                  <div className="space-y-3">
+                    <select
+                      disabled
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                    >
+                      <option value="">Loading grade levels...</option>
+                    </select>
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3">
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        <strong>No grade levels found.</strong> The database may need to be initialized. 
+                        Please run the seed script: <code className="bg-amber-100 dark:bg-amber-900 px-1 py-0.5 rounded">backend/seeders/seed-teaching-schedule-data.sql</code>
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <select
+                    value={addClassFormData.gradeLevelId}
+                    onChange={(e) => handleGradeLevelChange(e.target.value)}
+                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
+                    required
+                  >
+                    <option value="">Select Grade Level</option>
+                    {gradeLevels.filter(grade => grade.id <= 6).map(grade => (
+                      <option key={grade.id} value={grade.id}>
+                        {grade.name.toLowerCase().includes('grade') ? grade.name : `Grade ${grade.name}`}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Section Selection with Student Count */}
@@ -957,24 +1003,6 @@ const TeachingSchedulePage = () => {
                   )}
                 </div>
               )}
-
-              {/* Subject Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Subject *
-                </label>
-                <select
-                  value={addClassFormData.subjectId}
-                  onChange={(e) => setAddClassFormData({...addClassFormData, subjectId: e.target.value})}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                  required
-                >
-                  <option value="">Select Subject</option>
-                  {subjects.map(subject => (
-                    <option key={subject.id} value={subject.id}>{subject.name}</option>
-                  ))}
-                </select>
-              </div>
 
               {/* Day of Week */}
               <div>
@@ -1085,96 +1113,78 @@ const TeachingSchedulePage = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmitSchedule} className="space-y-4">
+            <form onSubmit={handleSubmitSchedule} className="space-y-6">
               {/* Select Teacher */}
               <div>
                 <label className="block text-sm text-white mb-2">Select Teacher:</label>
                 <div className="relative">
                   <select
                     value={createFormData.teacher}
-                    onChange={(e) => setCreateFormData({ ...createFormData, teacher: e.target.value })}
+                    onChange={(e) => handleTeacherChange(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl border border-[#f4d77d] bg-transparent text-[#f4d77d] text-sm focus:ring-2 focus:ring-[#f4d77d] focus:border-transparent outline-none appearance-none cursor-pointer"
                     required
                   >
                     <option value="" className="bg-[#342825]">Select Teacher</option>
-                    <option value="Mr. Santos" className="bg-[#342825]">Mr. Santos</option>
-                    <option value="Ms. Cruz" className="bg-[#342825]">Ms. Cruz</option>
-                    <option value="Mr. Reyes" className="bg-[#342825]">Mr. Reyes</option>
-                    <option value="Ms. Lopez" className="bg-[#342825]">Ms. Lopez</option>
-                    <option value="Mr. Garcia" className="bg-[#342825]">Mr. Garcia</option>
+                    {teachers.map((teacher) => (
+                      <option 
+                        key={teacher.id} 
+                        value={teacher.id} 
+                        className="bg-[#342825]"
+                      >
+                        {teacher.fullName} {teacher.specialization ? `- ${teacher.specialization}` : ''}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f4d77d] pointer-events-none" />
                 </div>
               </div>
 
-              {/* Grade and Section */}
-              <div>
-                <label className="block text-sm text-white mb-1">Grade and Section:</label>
-                <p className="text-sm text-white">{createFormData.gradeSection}</p>
-              </div>
-
-              {/* Room */}
-              <div>
-                <label className="block text-sm text-white mb-1">Room:</label>
-                <p className="text-sm text-white">{createFormData.room}</p>
-              </div>
-
-              {/* Day */}
-              <div>
-                <label className="block text-sm text-white mb-1">Day:</label>
-                <p className="text-sm text-white">{createFormData.day}</p>
-              </div>
-
-              {/* Schedule Table */}
-              <div className="mt-6 rounded-3xl overflow-hidden">
-                {/* Table Header */}
-                <div className="border-b border-white">
-                  <div className="grid grid-cols-2 py-3">
-                    <p className="text-sm font-bold text-white text-center">Time</p>
-                    <p className="text-sm font-bold text-white text-center">Subject</p>
+              {/* Display Assigned Sections */}
+              {createFormData.teacher && (
+                <div className="space-y-4">
+                  <div className="border-t border-gray-600 pt-4">
+                    <h3 className="text-lg font-semibold text-white mb-3">Assigned Grade and Section:</h3>
+                    {teacherSections.length === 0 ? (
+                      <p className="text-sm text-gray-400">No sections assigned to this teacher</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {teacherSections.map((section) => (
+                          <div 
+                            key={section.id} 
+                            className="bg-[#f4d77d]/10 border border-[#f4d77d]/30 rounded-xl p-4"
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-lg font-semibold text-[#f4d77d]">
+                                {section.gradeLevel} - {section.sectionName}
+                              </p>
+                              <span className="text-xs text-gray-400">
+                                {section.studentCount}/{section.maxCapacity} students
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-400">School Year: {section.schoolYear}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Time Slots */}
-                <div className="space-y-3 mt-3">
-                  {createFormData.timeSlots.map((slot, index) => (
-                    <div key={index} className="grid grid-cols-2 gap-4 items-center">
-                      {/* Time */}
-                      <p className="text-sm text-white pl-2">{slot.time}</p>
-                      
-                      {/* Subject Dropdown */}
-                      <div className="relative">
-                        <select
-                          value={slot.subject}
-                          onChange={(e) => handleSubjectChange(index, e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-[#9d9d9d] bg-transparent text-white text-sm focus:ring-2 focus:ring-[#f4d77d] focus:border-transparent outline-none appearance-none cursor-pointer"
-                        >
-                          <option value="" className="bg-[#342825]">Select Subject</option>
-                          <option value="English" className="bg-[#342825]">English</option>
-                          <option value="Math" className="bg-[#342825]">Math</option>
-                          <option value="Science" className="bg-[#342825]">Science</option>
-                          <option value="Filipino" className="bg-[#342825]">Filipino</option>
-                          <option value="TLE" className="bg-[#342825]">TLE</option>
-                          <option value="PE" className="bg-[#342825]">PE</option>
-                          <option value="Arts" className="bg-[#342825]">Arts</option>
-                          <option value="Music" className="bg-[#342825]">Music</option>
-                          <option value="Computer" className="bg-[#342825]">Computer</option>
-                          <option value="Values Education" className="bg-[#342825]">Values Education</option>
-                        </select>
-                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-white pointer-events-none" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              )}
 
               {/* Submit Button */}
-              <div className="flex justify-center mt-8">
+              <div className="flex gap-3 justify-end mt-8">
+                <button
+                  type="button"
+                  onClick={handleCancelCreate}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-[20px] font-medium hover:bg-gray-700 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
-                  className="px-8 py-3 bg-[#f4d77d] text-[#1a1004] rounded-[20px] font-medium hover:bg-[#f4d77d]/90 transition-colors text-sm"
+                  className="px-8 py-2 bg-[#f4d77d] text-[#1a1004] rounded-[20px] font-medium hover:bg-[#f4d77d]/90 transition-colors text-sm"
+                  disabled={!createFormData.teacher || teacherSections.length === 0}
                 >
-                  Submit Schedule
+                  View Schedule
                 </button>
               </div>
             </form>
