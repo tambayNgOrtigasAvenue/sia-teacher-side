@@ -78,11 +78,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const refreshUser = async () => {
+    try {
+      const response = await axios.get(
+        API_ENDPOINTS.GET_CURRENT_USER,
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        setUser(response.data.user);
+        return response.data.user;
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     loading,
     login,
-    logout
+    logout,
+    refreshUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

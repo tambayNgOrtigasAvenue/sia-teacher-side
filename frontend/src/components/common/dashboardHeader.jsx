@@ -219,7 +219,19 @@ const DashboardHeader = ({ setMobileOpen }) => {
                                         <button onClick={() => toggleDropdown('profile')} className='flex items-center gap-2 cursor-pointer'>
                                                 {user?.profilePictureURL ? (
                                                         <div className='w-10 h-10 rounded-full bg-gray-300 overflow-hidden'>
-                                                                <img src={user.profilePictureURL} alt='User' className='w-full h-full object-cover' />
+                                                                <img 
+                                                                        src={
+                                                                                user.profilePictureURL.startsWith('data:') || user.profilePictureURL.startsWith('http')
+                                                                                        ? user.profilePictureURL 
+                                                                                        : `http://localhost/gymnazo-christian-academy-teacher-side/backend/${user.profilePictureURL}`
+                                                                        }
+                                                                        alt='Profile' 
+                                                                        className='w-full h-full object-cover'
+                                                                        onError={(e) => {
+                                                                                e.target.style.display = 'none';
+                                                                                e.target.parentElement.innerHTML = `<div class='w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 flex items-center justify-center'><span class='text-white font-semibold text-sm'>${user?.firstName?.[0]?.toUpperCase() || 'T'}${user?.lastName?.[0]?.toUpperCase() || ''}</span></div>`;
+                                                                        }}
+                                                                />
                                                         </div>
                                                 ) : (
                                                         <div className='w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 dark:from-amber-500 dark:to-amber-700 flex items-center justify-center'>

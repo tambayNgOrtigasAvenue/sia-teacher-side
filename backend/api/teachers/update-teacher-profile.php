@@ -88,7 +88,61 @@ try {
     $motherTongue = (!empty($input['motherTongue'])) ? $input['motherTongue'] : null;
     $phoneNumber = (!empty($input['phoneNumber'])) ? $input['phoneNumber'] : null;
     $address = (!empty($input['address'])) ? $input['address'] : null;
-    $profilePicture = (!empty($input['profilePicture'])) ? $input['profilePicture'] : null;
+    
+    // Handle profile picture upload
+    $profilePictureURL = null;
+    if (!empty($input['profilePicture'])) {
+        // Check if it's a base64 image
+        if (strpos($input['profilePicture'], 'data:image') === 0) {
+            // Extract the base64 data
+            $image_parts = explode(";base64,", $input['profilePicture']);
+            if (count($image_parts) === 2) {
+                $image_type_aux = explode("image/", $image_parts[0]);
+                $image_type = $image_type_aux[1] ?? 'png';
+                $image_base64 = base64_decode($image_parts[1]);
+                
+                // Create uploads directory if it doesn't exist
+                $upload_dir = __DIR__ . '/../../uploads/profile-pictures/';
+                if (!file_exists($upload_dir)) {
+                    mkdir($upload_dir, 0755, true);
+                }
+                
+                // Generate unique filename
+                $filename = 'profile_' . $_SESSION['user_id'] . '_' . time() . '.' . $image_type;
+                $file_path = $upload_dir . $filename;
+                
+                // Save the file
+                if (file_put_contents($file_path, $image_base64)) {
+                    // Delete old profile picture if exists
+                    $oldPictureQuery = "SELECT ProfilePictureURL FROM profile WHERE ProfileID = :profileId";
+                    $stmt = $db->prepare($oldPictureQuery);
+                    $stmt->bindParam(':profileId', $profileId);
+                    $stmt->execute();
+                    $oldPicture = $stmt->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($oldPicture && !empty($oldPicture['ProfilePictureURL'])) {
+                        $oldFilePath = __DIR__ . '/../../' . $oldPicture['ProfilePictureURL'];
+                        if (file_exists($oldFilePath)) {
+                            unlink($oldFilePath);
+                        }
+                    }
+                    
+                    // Store relative path
+                    $profilePictureURL = 'uploads/profile-pictures/' . $filename;
+                    error_log("Profile picture saved: " . $profilePictureURL);
+                } else {
+                    error_log("Failed to save profile picture");
+                }
+            }
+        } else {
+            // It's already a URL, keep it as is
+            $profilePictureURL = $input['profilePicture'];
+        }
+    }
+    
+    // Check if MotherTongue column exists
+    $checkColumn = $db->query("SHOW COLUMNS FROM profile LIKE 'MotherTongue'");
+    $hasMotherTongue = $checkColumn->rowCount() > 0;
     
     $updateProfileQuery = "
         UPDATE profile 
@@ -100,7 +154,7 @@ try {
             BirthDate = :birthDate,
             Age = :age,
             Religion = :religion,
-            MotherTongue = :motherTongue,
+            " . ($hasMotherTongue ? "MotherTongue = :motherTongue," : "") . "
             EncryptedPhoneNumber = :encryptedPhoneNumber,
             EncryptedAddress = :encryptedAddress,
             ProfilePictureURL = :profilePicture
@@ -115,13 +169,15 @@ try {
     $stmt->bindParam(':birthDate', $birthDate);
     $stmt->bindParam(':age', $age);
     $stmt->bindParam(':religion', $religion);
-    $stmt->bindParam(':motherTongue', $motherTongue);
+    if ($hasMotherTongue) {
+        $stmt->bindParam(':motherTongue', $motherTongue);
+    }
     $stmt->bindParam(':encryptedPhoneNumber', $phoneNumber);
     $stmt->bindParam(':encryptedAddress', $address);
-    $stmt->bindParam(':profilePicture', $profilePicture);
+    $stmt->bindParam(':profilePicture', $profilePictureURL);
     $stmt->bindParam(':profileId', $profileId);
-    
-    error_log("Executing UPDATE with values - FirstName: $firstName, LastName: $lastName, ProfileID: $profileId");
+
+    error_log("Executing UPDATE with values - FirstName: $firstName, LastName: $lastName, ProfileID: $profileId, ProfilePicture: " . ($profilePictureURL ?? 'null'));
     
     $stmt->execute();
     

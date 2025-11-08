@@ -40,6 +40,10 @@ if (!$db) {
 }
 
 try {
+    // Check if MotherTongue column exists
+    $checkColumn = $db->query("SHOW COLUMNS FROM profile LIKE 'MotherTongue'");
+    $hasMotherTongue = $checkColumn->rowCount() > 0;
+    
     // Get teacher profile information
     $query = "
         SELECT 
@@ -53,7 +57,7 @@ try {
             p.BirthDate as birthday,
             p.Age as age,
             p.Religion as religion,
-            p.MotherTongue as motherTongue,
+            " . ($hasMotherTongue ? "p.MotherTongue as motherTongue," : "NULL as motherTongue,") . "
             p.EncryptedPhoneNumber as phoneNumber,
             p.EncryptedAddress as address,
             p.ProfilePictureURL as profilePicture,
@@ -106,10 +110,19 @@ try {
     ]);
     
 } catch (Exception $e) {
+    error_log("Get teacher profile error: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
+    error_log("User ID: " . ($_SESSION['user_id'] ?? 'not set'));
+    
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Error fetching profile: ' . $e->getMessage()
+        'message' => 'Error fetching profile: ' . $e->getMessage(),
+        'debug' => [
+            'file' => $e->getFile(),
+            'line' => $e->getLine(),
+            'userId' => $_SESSION['user_id'] ?? null
+        ]
     ]);
 }
 ?>

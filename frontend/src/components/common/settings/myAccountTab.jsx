@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { User, Mail, Phone, Calendar, Upload, Edit2, Save, X } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
+import { useAuth } from '../../../context/AuthContext';
 
 /**
  * MyAccountTab Component
  * Displays and allows editing of teacher profile information
  */
 export default function MyAccountTab() {
+  const { refreshUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,10 +35,14 @@ export default function MyAccountTab() {
   const fetchTeacherProfile = async () => {
     try {
       setLoading(true);
+      console.log('Fetching teacher profile...');
+      
       const response = await axios.get(
         'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/teachers/get-teacher-profile.php',
         { withCredentials: true }
       );
+
+      console.log('Profile response:', response.data);
 
       if (response.data.success) {
         const data = response.data.data;
@@ -54,14 +60,20 @@ export default function MyAccountTab() {
           motherTongue: data.motherTongue || '',
           profilePicture: data.profilePicture || null,
         };
+        console.log('Formatted profile data:', formattedData);
         setProfileData(formattedData);
         setOriginalData(formattedData);
       } else {
+        console.error('Profile fetch failed:', response.data.message);
         toast.error(response.data.message || 'Failed to fetch profile');
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      toast.error('Error loading profile. Please try again.');
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Error loading profile. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -77,24 +89,43 @@ export default function MyAccountTab() {
 
   // Handle save
   const handleSave = async () => {
+    const loadingToast = toast.loading('Saving profile changes...');
+    
     try {
       setSaving(true);
+      
+      // Log what we're sending
+      console.log('Sending profile data:', profileData);
+      
       const response = await axios.post(
         'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/teachers/update-teacher-profile.php',
         profileData,
         { withCredentials: true }
       );
 
+      console.log('Update response:', response.data);
+
       if (response.data.success) {
-        toast.success('Profile updated successfully!');
+        toast.success('Profile updated successfully!', { id: loadingToast });
         setOriginalData(profileData);
         setIsEditing(false);
+        
+        // Refresh user data in AuthContext to update header
+        try {
+          await refreshUser();
+        } catch (refreshError) {
+          console.warn('Could not refresh user context:', refreshError);
+        }
+        
+        // Refetch profile to ensure UI is in sync with database
+        await fetchTeacherProfile();
       } else {
-        toast.error(response.data.message || 'Failed to update profile');
+        toast.error(response.data.message || 'Failed to update profile', { id: loadingToast });
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Error updating profile. Please try again.');
+      console.error('Error response:', error.response?.data);
+      toast.error(error.response?.data?.message || 'Error updating profile. Please try again.', { id: loadingToast });
     } finally {
       setSaving(false);
     }
@@ -191,9 +222,17 @@ export default function MyAccountTab() {
               <div className="w-[200px] h-[200px] rounded-full overflow-hidden border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700">
                 {profileData.profilePicture ? (
                   <img
-                    src={profileData.profilePicture}
+                    src={
+                      profileData.profilePicture.startsWith('data:') 
+                        ? profileData.profilePicture 
+                        : `http://localhost/gymnazo-christian-academy-teacher-side/backend/${profileData.profilePicture}`
+                    }
                     alt="Profile"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>';
+                    }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
