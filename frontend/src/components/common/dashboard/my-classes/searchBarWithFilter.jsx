@@ -38,14 +38,14 @@ export default function SearchBarWithFilter({
   const options = filterType === 'classes' ? classFilterOptions : studentFilterOptions;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col md:flex-row justify-between items-center gap-4 my-6">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 flex flex-col md:flex-row justify-between items-center gap-4 my-6">
       {/* Filter Dropdown */}
       <div className="relative w-full md:w-auto">
-        <FilterIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <FilterIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
         <select
           value={filterOption}
           onChange={(e) => onFilterChange(e.target.value)}
-          className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-amber-400"
+          className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-amber-400"
         >
           {options.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -57,13 +57,13 @@ export default function SearchBarWithFilter({
       
       {/* Search Input */}
       <div className="relative w-full md:w-auto">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={18} />
         <input
           type="text"
           placeholder="Search..."
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 w-full focus:outline-none focus:ring-2 focus:ring-amber-400"
+          className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 w-full focus:outline-none focus:ring-2 focus:ring-amber-400"
         />
       </div>
     </div>

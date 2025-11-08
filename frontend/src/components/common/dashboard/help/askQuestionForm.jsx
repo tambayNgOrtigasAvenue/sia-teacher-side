@@ -11,7 +11,7 @@ import React, { useState } from 'react';
 export default function AskQuestionForm({ onSubmit }) {
   // Form field states
   const [fullName, setFullName] = useState('');
-  const [studentId, setStudentId] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
   const [description, setDescription] = useState('');
 
   /**
@@ -22,7 +22,7 @@ export default function AskQuestionForm({ onSubmit }) {
     e.preventDefault();
 
     // Basic validation
-    if (!fullName.trim() || !studentId.trim() || !description.trim()) {
+    if (!fullName.trim() || !employeeId.trim() || !description.trim()) {
       alert('Please fill in all fields');
       return;
     }
@@ -30,13 +30,13 @@ export default function AskQuestionForm({ onSubmit }) {
     // Call parent callback with form data
     onSubmit({
       fullName: fullName.trim(),
-      studentId: studentId.trim(),
+      employeeId: employeeId.trim(),
       description: description.trim()
     });
 
     // Reset form fields
     setFullName('');
-    setStudentId('');
+    setEmployeeId('');
     setDescription('');
 
     // Show success message
@@ -63,13 +63,13 @@ export default function AskQuestionForm({ onSubmit }) {
           />
         </div>
 
-        {/* Student ID Input */}
+        {/* Employee ID Input */}
         <div>
           <input
             type="text"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-            placeholder="Student ID"
+            value={employeeId}
+            onChange={(e) => setEmployeeId(e.target.value)}
+            placeholder="Employee ID"
             className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
           />
         </div>

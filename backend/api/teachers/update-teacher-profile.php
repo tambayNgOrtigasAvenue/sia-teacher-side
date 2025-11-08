@@ -42,6 +42,9 @@ if (!$db) {
 // Get JSON input
 $input = json_decode(file_get_contents('php://input'), true);
 
+// Log the received input for debugging
+error_log("Received input: " . json_encode($input));
+
 if (!$input) {
     http_response_code(400);
     echo json_encode(['success' => false, 'message' => 'Invalid input data.']);
@@ -68,15 +71,25 @@ try {
     }
     
     $profileId = $profileData['ProfileID'];
+    $firstName = (!empty($input['firstName'])) ? trim($input['firstName']) : null;
+    $lastName = (!empty($input['lastName'])) ? trim($input['lastName']) : null;
+    $middleName = (!empty($input['middleName'])) ? trim($input['middleName']) : null;
+
+    if (empty($firstName) || empty($lastName)) {
+        throw new Exception('First name and last name are required.');
+    }
+
+    $gender = (isset($input['gender']) && in_array($input['gender'], ['Male', 'Female'])) 
+        ? $input['gender'] 
+        : null;
+    $birthDate = (!empty($input['birthday'])) ? $input['birthday'] : null;
+    $age = (!empty($input['age'])) ? intval($input['age']) : null;
+    $religion = (!empty($input['religion'])) ? $input['religion'] : null;
+    $motherTongue = (!empty($input['motherTongue'])) ? $input['motherTongue'] : null;
+    $phoneNumber = (!empty($input['phoneNumber'])) ? $input['phoneNumber'] : null;
+    $address = (!empty($input['address'])) ? $input['address'] : null;
+    $profilePicture = (!empty($input['profilePicture'])) ? $input['profilePicture'] : null;
     
-    // Parse full name
-    $fullName = isset($input['fullName']) ? trim($input['fullName']) : '';
-    $nameParts = explode(' ', $fullName);
-    $firstName = $nameParts[0] ?? '';
-    $lastName = end($nameParts);
-    $middleName = count($nameParts) > 2 ? $nameParts[1] : null;
-    
-    // Update profile table
     $updateProfileQuery = "
         UPDATE profile 
         SET 
@@ -87,6 +100,7 @@ try {
             BirthDate = :birthDate,
             Age = :age,
             Religion = :religion,
+            MotherTongue = :motherTongue,
             EncryptedPhoneNumber = :encryptedPhoneNumber,
             EncryptedAddress = :encryptedAddress,
             ProfilePictureURL = :profilePicture
@@ -98,13 +112,17 @@ try {
     $stmt->bindParam(':lastName', $lastName);
     $stmt->bindParam(':middleName', $middleName);
     $stmt->bindParam(':gender', $gender);
-    $stmt->bindParam(':birthDate', $input['birthDate']);
-    $stmt->bindParam(':age', $input['age']);
-    $stmt->bindParam(':religion', $input['religion']);
-    $stmt->bindParam(':encryptedPhoneNumber', $input['encryptedPhoneNumber']);
-    $stmt->bindParam(':encryptedAddress', $input['encryptedAddress']);
-    $stmt->bindParam(':profilePicture', $input['profilePicture']);
+    $stmt->bindParam(':birthDate', $birthDate);
+    $stmt->bindParam(':age', $age);
+    $stmt->bindParam(':religion', $religion);
+    $stmt->bindParam(':motherTongue', $motherTongue);
+    $stmt->bindParam(':encryptedPhoneNumber', $phoneNumber);
+    $stmt->bindParam(':encryptedAddress', $address);
+    $stmt->bindParam(':profilePicture', $profilePicture);
     $stmt->bindParam(':profileId', $profileId);
+    
+    error_log("Executing UPDATE with values - FirstName: $firstName, LastName: $lastName, ProfileID: $profileId");
+    
     $stmt->execute();
     
     // Update user email
@@ -134,6 +152,10 @@ try {
     if ($db->inTransaction()) {
         $db->rollBack();
     }
+    
+    // Log the full error
+    error_log("Profile update error: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
     
     http_response_code(500);
     echo json_encode([

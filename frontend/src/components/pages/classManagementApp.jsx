@@ -249,6 +249,7 @@ export default function ClassManagementApp() {
           error={error}
           onViewClassDetails={handleViewClassDetails}
           onToggleFavorite={handleToggleFavorite}
+          onRefresh={fetchTeacherClasses}
         />
       )}
 

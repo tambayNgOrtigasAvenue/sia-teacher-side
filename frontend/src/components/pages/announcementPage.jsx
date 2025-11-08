@@ -31,13 +31,13 @@ export default function AnnouncementPage({ announcements }) {
   });
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       {/* Page Header */}
       <div className="pt-8 pb-6">
-        <h3 className="text-center text-gray-500 text-sm font-semibold tracking-wider uppercase mb-2">
+        <h3 className="text-center text-gray-500 dark:text-gray-400 text-sm font-semibold tracking-wider uppercase mb-2">
           ANNOUNCEMENT
         </h3>
-        <h1 className="text-center text-5xl font-bold text-gray-900">
+        <h1 className="text-center text-5xl font-bold text-gray-900 dark:text-white">
           Updated <span className="text-amber-400">Announcement</span>
         </h1>
       </div>
@@ -64,8 +64,8 @@ export default function AnnouncementPage({ announcements }) {
           ))
         ) : (
           <div className="col-span-full text-center py-12">
-            <p className="text-gray-500 text-lg">No announcements found</p>
-            <p className="text-gray-400 text-sm mt-2">Try adjusting your search</p>
+            <p className="text-gray-500 dark:text-gray-400 text-lg">No announcements found</p>
+            <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">Try adjusting your search</p>
           </div>
         )}
       </div>

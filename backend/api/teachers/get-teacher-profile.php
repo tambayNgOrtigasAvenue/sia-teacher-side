@@ -44,13 +44,23 @@ try {
     $query = "
         SELECT 
             u.UserID,
-            u.Email,
-            CONCAT(p.FirstName, ' ', IFNULL(p.MiddleName, ''), ' ', p.LastName) as fullName,
+            u.EmailAddress as email,
+            p.FirstName as firstName,
+            p.MiddleName as middleName,
+            p.LastName as lastName,
+            CONCAT(p.FirstName, ' ', IFNULL(CONCAT(p.MiddleName, ' '), ''), p.LastName) as fullName,
+            p.Gender as gender,
+            p.BirthDate as birthday,
+            p.Age as age,
+            p.Religion as religion,
+            p.MotherTongue as motherTongue,
+            p.EncryptedPhoneNumber as phoneNumber,
+            p.EncryptedAddress as address,
             p.ProfilePictureURL as profilePicture,
             tp.EmployeeNumber,
             tp.Specialization,
             tp.HireDate,
-            'Regular' as accountType
+            u.UserType as accountType
         FROM user u
         JOIN profile p ON u.UserID = p.UserID
         JOIN teacherprofile tp ON p.ProfileID = tp.ProfileID
@@ -68,24 +78,25 @@ try {
         exit();
     }
     
-    // Calculate age from hire date (placeholder - should use birthdate if available)
-    $age = '';
-    $birthday = '';
-    
     // Format the response
     $response = [
-        'fullName' => $profile['fullName'],
-        'email' => $profile['Email'],
-        'age' => $age,
-        'birthday' => $birthday,
-        'phoneNumber' => '', // Phone number is encrypted, needs decryption
-        'accountType' => $profile['accountType'],
-        'religion' => '', // Not in current schema
-        'motherTongue' => '', // Not in current schema
-        'profilePicture' => $profile['profilePicture'],
-        'employeeNumber' => $profile['EmployeeNumber'],
-        'specialization' => $profile['Specialization'],
-        'hireDate' => $profile['HireDate']
+        'firstName' => $profile['firstName'] ?? '',
+        'middleName' => $profile['middleName'] ?? '',
+        'lastName' => $profile['lastName'] ?? '',
+        'fullName' => $profile['fullName'] ?? '',
+        'email' => $profile['email'] ?? '',
+        'gender' => $profile['gender'] ?? '',
+        'birthday' => $profile['birthday'] ?? '',
+        'age' => $profile['age'] ?? '',
+        'religion' => $profile['religion'] ?? '',
+        'motherTongue' => $profile['motherTongue'] ?? '',
+        'phoneNumber' => $profile['phoneNumber'] ?? '',
+        'address' => $profile['address'] ?? '',
+        'accountType' => $profile['accountType'] ?? 'Teacher',
+        'profilePicture' => $profile['profilePicture'] ?? null,
+        'employeeNumber' => $profile['EmployeeNumber'] ?? '',
+        'specialization' => $profile['Specialization'] ?? '',
+        'hireDate' => $profile['HireDate'] ?? ''
     ];
     
     http_response_code(200);

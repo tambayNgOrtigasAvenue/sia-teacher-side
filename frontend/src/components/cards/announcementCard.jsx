@@ -14,7 +14,7 @@ import React from 'react';
  */
 export default function AnnouncementCard({ announcement }) {
   return (
-    <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300">
       {/* Announcement Image */}
       <div className="relative">
         <img 
@@ -31,12 +31,12 @@ export default function AnnouncementCard({ announcement }) {
       {/* Card Content */}
       <div className="p-4 flex flex-col flex-grow">
         {/* Announcement Title */}
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
           {announcement.title}
         </h3>
 
         {/* Announcement Description */}
-        <p className="text-gray-600 text-sm mb-4 flex-grow line-clamp-3">
+        <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 flex-grow line-clamp-3">
           {announcement.description}
         </p>
 
@@ -44,7 +44,7 @@ export default function AnnouncementCard({ announcement }) {
         <div className="flex gap-2 mt-auto">
           {/* Read More Button */}
           <button 
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-2 px-4 rounded-full text-sm transition-colors"
+            className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-2 px-4 rounded-full text-sm transition-colors"
             onClick={() => {
               // TODO: Implement read more functionality (show full announcement)
               console.log('Read more:', announcement.id);
