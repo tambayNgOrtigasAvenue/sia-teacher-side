@@ -14,17 +14,17 @@ const DashboardPage = () => {
         {/* Welcome Banner - Full Width */}
         <Welcome />
 
-        {/* Main Content - Two Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Main Content - Adaptive Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           
           {/* Left Column - Schedule and Calendar */}
-          <div className="space-y-6">
+          <div className="space-y-6 flex flex-col">
             <MySchedule />
             <CalendarWidget />
           </div>
 
           {/* Right Column - Notifications, Announcements, Advisory Class */}
-          <div className="space-y-6">
+          <div className="space-y-6 flex flex-col">
             <Notifications />
             <Announcements />
             <AdvisoryClass />

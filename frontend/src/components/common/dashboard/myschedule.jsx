@@ -31,11 +31,11 @@ const MySchedule = () => {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 h-full">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
           My Schedule
         </h2>
-        <div className="flex items-center justify-center h-32">
+        <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
         </div>
       </div>
@@ -43,7 +43,7 @@ const MySchedule = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 h-full">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
       <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
         My Schedule
       </h2>
@@ -55,7 +55,7 @@ const MySchedule = () => {
       )}
       
       {schedules.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-32 text-center">
+        <div className="flex flex-col items-center justify-center py-8 text-center">
           <p className="text-gray-500 dark:text-gray-400">
             No class schedule found
           </p>

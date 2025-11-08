@@ -31,13 +31,13 @@ const Announcements = () => {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 h-full">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Announcements
           </h2>
         </div>
-        <div className="flex items-center justify-center h-32">
+        <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
         </div>
       </div>
@@ -45,7 +45,7 @@ const Announcements = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 h-full">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">
           Announcements
@@ -65,7 +65,7 @@ const Announcements = () => {
       )}
       
       {announcements.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-32 text-center">
+        <div className="flex flex-col items-center justify-center py-8 text-center">
           <Megaphone className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" />
           <p className="text-gray-500 dark:text-gray-400">
             No announcements available
@@ -83,7 +83,7 @@ const Announcements = () => {
                   <Bell className="w-4 h-4 text-yellow-700 dark:text-yellow-300" />
                 </span>
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <h4 className="text-sm font-semibold text-gray-800 dark:text-white">
                   {item.title}
                 </h4>
