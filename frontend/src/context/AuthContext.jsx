@@ -11,6 +11,14 @@ export const AuthProvider = ({ children }) => {
   // Check for existing session on mount
   useEffect(() => {
     const checkAuth = async () => {
+      // Only check auth if there's a token present
+      const hasToken = localStorage.getItem('authToken') || sessionStorage.getItem('teacherSession');
+      
+      if (!hasToken) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const response = await axios.get(
           API_ENDPOINTS.GET_CURRENT_USER,
@@ -19,12 +27,18 @@ export const AuthProvider = ({ children }) => {
         
         if (response.data.success) {
           setUser(response.data.user);
+        } else {
+          // If auth check fails, clear tokens
+          localStorage.removeItem('authToken');
+          sessionStorage.removeItem('teacherSession');
+          setUser(null);
         }
       } catch (error) {
         console.error('Auth check error:', error);
         // Clear any stale tokens
         localStorage.removeItem('authToken');
         sessionStorage.removeItem('teacherSession');
+        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -65,7 +79,8 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await axios.post(
-        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/logout.php',
+        API_ENDPOINTS.LOGOUT,
+        //'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/logout.php',
         {},
         { withCredentials: true }
       );
