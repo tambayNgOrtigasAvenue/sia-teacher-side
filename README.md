@@ -862,13 +862,15 @@ git push origin feature/your-feature
 ## 🙏 Acknowledgements
 
 ### **Development Team**
-- **Lead Developer**: [TambayNgOrtigasAvenue](https://github.com/tambayNgOrtigasAvenue)
+- **Lead Developer**: [tambayNgOrtigasAvenue](https://github.com/tambayNgOrtigasAvenue)
 - **Project Manager**: Allyana Cabiling
 - **UI/UX Design**: Legaspina, Nath
-    Peta, Camille
-    Tolores, Lorea
-    Garcia, Alexandria
-
+    - Peta, Camille
+    - Tolores, Lorea
+    - Garcia, Alexandria
+-**Frontend Layout Developer**: [OpenYaji](https://github.com/OpenYaji)
+   - John Rey Calipes
+   
 - **Quality Assurance**: None
 
 ### **Open Source Libraries**
