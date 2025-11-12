@@ -16,7 +16,7 @@ import RegisterTeacher from './components/common/homepage/registerTeacher';
 import AttendancePage from './pages/AttendancePage';
 import AttendanceReportPage from './pages/AttendanceReportPage';
 
-/**
+/** 
  * ProtectedRoute Component
  * Checks if user is authenticated before allowing access to dashboard routes
  */

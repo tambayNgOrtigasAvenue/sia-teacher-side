@@ -198,46 +198,50 @@ export default function MyAccountTab() {
 
           {/* Profile Header with Gradient */}
           <div className="bg-gradient-to-r from-white to-amber-300 dark:from-gray-700 dark:to-amber-600 rounded-t-[25px] p-12 -mx-8 relative">
-            {isEditing && (
-              <label
-                htmlFor="profile-upload"
-                className="absolute top-11 right-11 backdrop-blur-sm bg-black/30 p-4 rounded-full cursor-pointer hover:bg-black/40 transition-colors"
-              >
-                <Upload size={24} className="text-white" />
-                <input
-                  id="profile-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleProfilePictureChange}
-                />
-              </label>
-            )}
           </div>
 
           {/* Profile Picture and Name */}
           <div className="px-8 -mt-24 mb-6">
             <div className="flex flex-col gap-4">
               {/* Profile Picture */}
-              <div className="w-[200px] h-[200px] rounded-full overflow-hidden border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700">
-                {profileData.profilePicture ? (
-                  <img
-                    src={
-                      profileData.profilePicture.startsWith('data:') 
-                        ? profileData.profilePicture 
-                        : `http://localhost/gymnazo-christian-academy-teacher-side/backend/${profileData.profilePicture}`
-                    }
-                    alt="Profile"
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>';
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <User size={80} className="text-gray-400 dark:text-gray-500" />
-                  </div>
+              <div className="relative w-[200px] h-[200px]">
+                <div className="w-full h-full rounded-full overflow-hidden border-4 border-white dark:border-gray-800 bg-gray-200 dark:bg-gray-700">
+                  {profileData.profilePicture ? (
+                    <img
+                      src={
+                        profileData.profilePicture.startsWith('data:') 
+                          ? profileData.profilePicture 
+                          : `http://localhost/gymnazo-christian-academy-teacher-side/backend/${profileData.profilePicture}`
+                      }
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.parentElement.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-400"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <User size={80} className="text-gray-400 dark:text-gray-500" />
+                    </div>
+                  )}
+                </div>
+                
+                {/* Upload Button - Bottom Right of Circle */}
+                {isEditing && (
+                  <label
+                    htmlFor="profile-upload"
+                    className="absolute bottom-2 right-2 backdrop-blur-sm bg-amber-500 hover:bg-amber-600 p-3 rounded-full cursor-pointer transition-colors shadow-lg border-2 border-white dark:border-gray-800"
+                  >
+                    <Upload size={20} className="text-white" />
+                    <input
+                      id="profile-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleProfilePictureChange}
+                    />
+                  </label>
                 )}
               </div>
 

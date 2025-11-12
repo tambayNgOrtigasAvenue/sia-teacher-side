@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Phone, MapPin, Briefcase, Calendar, UserPlus } from 'lucide-react';
+import Header from './loginHeader';
+import Bg from '../../../assets/img/bg.png';
+import Logo from '../../../assets/img/gymnazu.png';
 
 const RegisterTeacher = () => {
   const navigate = useNavigate();
@@ -138,38 +141,51 @@ const RegisterTeacher = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="bg-indigo-600 p-3 rounded-full">
-              <UserPlus className="w-8 h-8 text-white" />
-            </div>
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900">Register Teacher Account</h2>
-          <p className="mt-2 text-sm text-gray-600">Create a new teacher account</p>
+    <>
+      <Header />
+      <div className="relative min-h-screen w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        {/* Background Image with Overlay */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center" 
+          style={{ backgroundImage: `url(${Bg})` }}
+        >
+          <div className="absolute inset-0 bg-stone-900/60 dark:bg-black/70 z-0 transition-colors duration-300"></div>
         </div>
 
-        {/* Error/Success Messages */}
-        {error && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
-            <p className="text-red-700 text-sm">{error}</p>
+        {/* Registration Form Container */}
+        <div className="relative z-10 max-w-4xl w-full bg-stone-800/60 dark:bg-gray-900/70 border border-stone-700 dark:border-gray-600 backdrop-blur-sm rounded-2xl shadow-2xl p-8 transition-colors duration-300">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <img 
+                src={Logo} 
+                alt="School Logo" 
+                className="w-20 h-20 object-contain"
+              />
+            </div>
+            <h2 className="text-3xl font-bold uppercase text-white tracking-wider">Register Teacher Account</h2>
+            <p className="mt-2 text-sm text-gray-300">Create a new teacher account</p>
           </div>
-        )}
-        
-        {success && (
-          <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded">
-            <p className="text-green-700 text-sm">{success}</p>
-          </div>
-        )}
+
+          {/* Error/Success Messages */}
+          {error && (
+            <div className="mb-6 bg-red-500/20 border border-red-500 p-4 rounded-lg">
+              <p className="text-red-200 text-sm text-center">{error}</p>
+            </div>
+          )}
+          
+          {success && (
+            <div className="mb-6 bg-green-500/20 border border-green-500 p-4 rounded-lg">
+              <p className="text-green-200 text-sm text-center">{success}</p>
+            </div>
+          )}
 
         {/* Registration Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Email Address <span className="text-red-400">*</span>
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -178,8 +194,8 @@ const RegisterTeacher = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="teacher@example.com"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
+                placeholder="delacruz.juan.huanito@gymnazo.edu.ph"
                 required
               />
             </div>
@@ -188,8 +204,8 @@ const RegisterTeacher = () => {
           {/* Password Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Password <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -198,15 +214,15 @@ const RegisterTeacher = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
                   placeholder="••••••••"
                   required
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Confirm Password <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -215,7 +231,7 @@ const RegisterTeacher = () => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
                   placeholder="••••••••"
                   required
                 />
@@ -226,8 +242,8 @@ const RegisterTeacher = () => {
           {/* Name Fields */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                First Name <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                First Name <span className="text-red-400">*</span>
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -236,14 +252,14 @@ const RegisterTeacher = () => {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="John"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
+                  placeholder="Juan"
                   required
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Middle Name
               </label>
               <input
@@ -251,21 +267,21 @@ const RegisterTeacher = () => {
                 name="middleName"
                 value={formData.middleName}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="Smith"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
+                placeholder="Huanito"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-gray-200 mb-2">
+                Last Name <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="Doe"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
+                placeholder="Dela Cruz"
                 required
               />
             </div>
@@ -273,8 +289,8 @@ const RegisterTeacher = () => {
 
           {/* Employee Number */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Employee Number <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-gray-200 mb-2">
+              Employee Number <span className="text-red-400">*</span>
             </label>
             <div className="relative">
               <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -283,7 +299,7 @@ const RegisterTeacher = () => {
                 name="employeeNumber"
                 value={formData.employeeNumber}
                 onChange={handleChange}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
                 placeholder="TEACH-2025-001"
                 required
               />
@@ -293,7 +309,7 @@ const RegisterTeacher = () => {
           {/* Contact Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Phone Number
               </label>
               <div className="relative">
@@ -303,13 +319,13 @@ const RegisterTeacher = () => {
                   name="phoneNumber"
                   value={formData.phoneNumber}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="09171234567"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
+                  placeholder="+(63) 9xx-xxx-xxxx"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-200 mb-2">
                 Hire Date
               </label>
               <div className="relative">
@@ -319,7 +335,7 @@ const RegisterTeacher = () => {
                   name="hireDate"
                   value={formData.hireDate}
                   onChange={handleChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
                 />
               </div>
             </div>
@@ -327,7 +343,7 @@ const RegisterTeacher = () => {
 
           {/* Address */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-200 mb-2">
               Address
             </label>
             <div className="relative">
@@ -337,15 +353,15 @@ const RegisterTeacher = () => {
                 value={formData.address}
                 onChange={handleChange}
                 rows="2"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                placeholder="123 Main Street, City"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-2xl focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
+                placeholder="1234 Elm Street, Barangay, City, Province, ZIP Code"
               />
             </div>
           </div>
 
           {/* Specialization */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-200 mb-2">
               Specialization
             </label>
             <input
@@ -353,7 +369,7 @@ const RegisterTeacher = () => {
               name="specialization"
               value={formData.specialization}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-full focus:ring-2 focus:ring-amber-500 transition duration-300 placeholder-gray-500 dark:placeholder-gray-400 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 shadow-sm text-sm"
               placeholder="Mathematics, Science, English, etc."
             />
           </div>
@@ -363,17 +379,17 @@ const RegisterTeacher = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition-all duration-200 ${
+              className={`w-full py-3 px-4 rounded-full text-gray-900 font-semibold transition-all duration-300 shadow-lg ${
                 loading
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95'
+                  : 'bg-amber-400 hover:bg-amber-300'
               }`}
             >
               {loading ? (
-                <span className="flex items-center justify-center">
-                  <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
                   Creating Account...
                 </span>
@@ -384,18 +400,19 @@ const RegisterTeacher = () => {
           </div>
 
           {/* Back to Login */}
-          <div className="text-center">
+          <div className="text-center mt-4">
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
+              className="text-sm text-gray-300 hover:text-amber-400 font-medium transition duration-300"
             >
               ← Back to Login
             </button>
           </div>
         </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

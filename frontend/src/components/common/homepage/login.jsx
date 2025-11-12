@@ -17,12 +17,16 @@ const Login = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Only redirect if user is logged in AND we're not in the middle of submitting
+  // This prevents flickering when logging out
   useEffect(() => {
     if (!authLoading && user && !isSubmitting) {
-      // Redirect to teacher dashboard instead of student dashboard
-      navigate('/teacher-dashboard', { replace: true });
+      // Additional check: only redirect if we have a valid token
+      const hasToken = localStorage.getItem('authToken') || sessionStorage.getItem('teacherSession');
+      if (hasToken) {
+        navigate('/teacher-dashboard', { replace: true });
+      }
     }
-
   }, [user, authLoading, isSubmitting, navigate]);
   const handleSubmit = async (e) => {
     e.preventDefault();

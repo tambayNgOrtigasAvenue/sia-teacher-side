@@ -34,30 +34,29 @@ export default function DashboardSidebar({ collapsed, setCollapsed, mobileOpen, 
 
     const handleConfirmLogout = async () => {
         try{
-            // Perform logout operations here (e.g., clear auth tokens, inform backend)
+            // Clear authentication tokens FIRST to prevent redirects
+            localStorage.removeItem('authToken');
+            sessionStorage.removeItem('teacherSession');
+            
+            // Close the modal
+            setLogoutModalOpen(false);
+            
+            // Perform logout operations on backend
             const response = await fetch('http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/logout.php', {
-            method: 'POST',
-            credentials: 'include'
-        });
+                method: 'POST',
+                credentials: 'include'
+            });
         
             const data = await response.json();
             console.log("Logged out:", data.message);
             
-            // Clear authentication tokens
-            localStorage.removeItem('authToken');
-            sessionStorage.removeItem('teacherSession');
-            
-            setLogoutModalOpen(false);
-            
-            // Redirect to login page
-            navigate('/login');
+            // Redirect to login page with replace to prevent back navigation
+            navigate('/login', { replace: true });
         }
         catch(error){
             console.error("Logout failed:", error);
-            // Even if backend fails, clear local tokens and redirect
-            localStorage.removeItem('authToken');
-            sessionStorage.removeItem('teacherSession');
-            navigate('/login');
+            // Even if backend fails, tokens are already cleared, just redirect
+            navigate('/login', { replace: true });
         }
     };
 

@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Star, Edit2, Trash2, X, Save, ChevronDown } from 'lucide-react';
+import { Search, Filter, X } from 'lucide-react';
 import Breadcrumb from '../common/Breadcrumb';
+import MySchedule from '../schedules/MySchedule';
+import TeacherSchedules from '../schedules/TeacherSchedules';
+import EditScheduleModal from '../schedules/EditScheduleModal';
+import CreateScheduleModal from '../schedules/CreateScheduleModal';
+import AddClassModal from '../schedules/AddClassModal';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -30,15 +35,26 @@ const TeachingSchedulePage = () => {
   const [addClassFormData, setAddClassFormData] = useState({
     gradeLevelId: '',
     sectionId: '',
-    dayOfWeek: 'Monday',
-    startTime: '08:00',
-    endTime: '09:00',
     roomNumber: ''
   });
   const [teacherSections, setTeacherSections] = useState([]);
   const [selectedSection, setSelectedSection] = useState(null);
   const [createFormData, setCreateFormData] = useState({
-    teacher: ''
+    teacher: '',
+    gradeSection: '',
+    room: '',
+    day: 'Monday to Friday',
+    schedule: [
+      { time: '6:30 AM - 7:30 AM', subject: '' },
+      { time: '7:30 AM - 8:30 AM', subject: '' },
+      { time: '8:30 AM - 9:30 AM', subject: '' },
+      { time: '10:00 AM - 11:00 AM', subject: '' },
+      { time: '11:00 AM - 12:00 PM', subject: '' },
+      { time: '12:00 PM - 1:00 PM', subject: '' },
+      { time: '1:00 PM - 2:00 PM', subject: '' },
+      { time: '3:00 PM- 4:00 PM', subject: '' },
+      { time: '4:00 PM - 5:00 PM', subject: '' }
+    ]
   });
 
   // Fetch initial options on mount
@@ -285,10 +301,6 @@ const TeachingSchedulePage = () => {
     setAddClassFormData({
       gradeLevelId: '',
       sectionId: '',
-      subjectId: '',
-      dayOfWeek: 'Monday',
-      startTime: '08:00',
-      endTime: '09:00',
       roomNumber: ''
     });
     setSectionsData([]);
@@ -351,35 +363,31 @@ const TeachingSchedulePage = () => {
   const handleSubmitAddClass = async (e) => {
     e.preventDefault();
 
-    if (!addClassFormData.sectionId || !addClassFormData.subjectId) {
-      toast.error('Please select both section and subject');
+    if (!addClassFormData.sectionId) {
+      toast.error('Please select a section');
       return;
     }
 
     try {
       const response = await axios.post(
-        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/schedules/create-class.php',
+        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/schedules/assign-teacher-to-section.php',
         {
           sectionId: addClassFormData.sectionId,
-          subjectId: addClassFormData.subjectId,
-          dayOfWeek: addClassFormData.dayOfWeek,
-          startTime: addClassFormData.startTime + ':00',
-          endTime: addClassFormData.endTime + ':00',
           roomNumber: addClassFormData.roomNumber || 'TBD'
         },
         { withCredentials: true }
       );
 
       if (response.data.success) {
-        toast.success('Class created successfully!');
+        toast.success(response.data.message);
         handleCancelAddClass();
         fetchData(); // Refresh the schedules
       } else {
-        toast.error(response.data.message || 'Failed to create class');
+        toast.error(response.data.message || 'Failed to assign section');
       }
     } catch (error) {
-      console.error('Error creating class:', error);
-      toast.error(error.response?.data?.message || 'Error creating class. Please try again.');
+      console.error('Error assigning section:', error);
+      toast.error(error.response?.data?.message || 'Error assigning section. Please try again.');
     }
   };
 
@@ -443,42 +451,130 @@ const TeachingSchedulePage = () => {
     setIsCreateModalOpen(true);
   };
 
-  const handleTeacherChange = (teacherId) => {
-    setCreateFormData({ teacher: teacherId });
-    fetchTeacherSections(teacherId);
+  const handleTeacherChange = async (teacherId) => {
+    setCreateFormData({ 
+      teacher: teacherId,
+      gradeSection: '',
+      room: '',
+      day: 'Monday to Friday',
+      schedule: [
+        { time: '6:30 AM - 7:30 AM', subject: '' },
+        { time: '7:30 AM - 8:30 AM', subject: '' },
+        { time: '8:30 AM - 9:30 AM', subject: '' },
+        { time: '10:00 AM - 11:00 AM', subject: '' },
+        { time: '11:00 AM - 12:00 PM', subject: '' },
+        { time: '12:00 PM - 1:00 PM', subject: '' },
+        { time: '1:00 PM - 2:00 PM', subject: '' },
+        { time: '3:00 PM- 4:00 PM', subject: '' },
+        { time: '4:00 PM - 5:00 PM', subject: '' }
+      ]
+    });
+    
+    await fetchTeacherSections(teacherId);
+    await fetchTeacherScheduleDetail(teacherId);
+  };
+
+  const fetchTeacherScheduleDetail = async (teacherId) => {
+    if (!teacherId) return;
+
+    try {
+      const response = await axios.get(
+        `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/schedules/get-teacher-schedule-detail.php?teacherId=${teacherId}`,
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        const scheduleData = response.data.data;
+        setCreateFormData(prev => ({
+          ...prev,
+          gradeSection: scheduleData.gradeSection,
+          room: scheduleData.room,
+          day: scheduleData.day,
+          schedule: scheduleData.schedule,
+          teacherProfileId: scheduleData.teacherProfileId,
+          sectionId: scheduleData.sectionId
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching teacher schedule detail:', error);
+      // Don't show error toast here as it's okay if there's no schedule yet
+    }
   };
 
   const handleCancelCreate = () => {
     setIsCreateModalOpen(false);
     setCreateFormData({
-      teacher: ''
+      teacher: '',
+      gradeSection: '',
+      room: '',
+      day: 'Monday to Friday',
+      schedule: [
+        { time: '6:30 AM - 7:30 AM', subject: '' },
+        { time: '7:30 AM - 8:30 AM', subject: '' },
+        { time: '8:30 AM - 9:30 AM', subject: '' },
+        { time: '10:00 AM - 11:00 AM', subject: '' },
+        { time: '11:00 AM - 12:00 PM', subject: '' },
+        { time: '12:00 PM - 1:00 PM', subject: '' },
+        { time: '1:00 PM - 2:00 PM', subject: '' },
+        { time: '3:00 PM- 4:00 PM', subject: '' },
+        { time: '4:00 PM - 5:00 PM', subject: '' }
+      ]
     });
     setTeacherSections([]);
     setSelectedSection(null);
   };
 
-  const handleSubmitSchedule = (e) => {
+  const handleSubjectChange = (index, subjectId) => {
+    const newSchedule = [...createFormData.schedule];
+    newSchedule[index].subject = subjectId;
+    setCreateFormData({ ...createFormData, schedule: newSchedule });
+  };
+
+  const handleSubmitSchedule = async (e) => {
     e.preventDefault();
+    
     // Validate form
     if (!createFormData.teacher) {
       toast.error('Please select a teacher');
       return;
     }
     
-    if (!selectedSection) {
-      toast.error('No section assigned to this teacher');
+    if (!createFormData.teacherProfileId || !createFormData.sectionId) {
+      toast.error('Teacher has no assigned section. Please assign a section first.');
+      return;
+    }
+
+    // Check if at least one subject is selected
+    const hasSubject = createFormData.schedule.some(slot => slot.subject !== '');
+    if (!hasSubject) {
+      toast.error('Please select at least one subject');
       return;
     }
     
-    console.log('Schedule info:', {
-      teacher: createFormData.teacher,
-      section: selectedSection
-    });
-    
-    toast.success('Schedule information displayed successfully!');
-    
-    // Close modal and reset form
-    handleCancelCreate();
+    try {
+      const response = await axios.post(
+        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/schedules/submit-schedule.php',
+        {
+          teacherProfileId: createFormData.teacherProfileId,
+          sectionId: createFormData.sectionId,
+          room: createFormData.room,
+          day: createFormData.day,
+          schedule: createFormData.schedule
+        },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        toast.success(response.data.message);
+        handleCancelCreate();
+        fetchData(); // Refresh the schedules list
+      } else {
+        toast.error(response.data.message || 'Failed to save schedule');
+      }
+    } catch (error) {
+      console.error('Error submitting schedule:', error);
+      toast.error(error.response?.data?.message || 'Error saving schedule. Please try again.');
+    }
   };
 
   return (
@@ -509,13 +605,13 @@ const TeachingSchedulePage = () => {
               setActiveTab('my-schedule');
               setSearchQuery(''); // Clear search when switching tabs
             }}
-            className={`px-6 py-3 rounded-2xl font-medium transition-all ${
+            className={`px-7 py-3 rounded-2xl font-medium transition-all ${
               activeTab === 'my-schedule'
                 ? 'bg-amber-300 text-gray-900 border border-gray-900/20'
                 : 'bg-transparent text-gray-900 dark:text-white border border-gray-900/20 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-gray-800'
             }`}
           >
-            My Schedule
+            My Class Schedule
           </button>
           <button
             onClick={() => {
@@ -590,607 +686,57 @@ const TeachingSchedulePage = () => {
 
       {/* Content - Conditional based on active tab */}
       {activeTab === 'my-schedule' ? (
-        /* My Schedule Tables */
-        <div className="space-y-6">
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
-            </div>
-          ) : filteredSchedules.length === 0 ? (
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-12 text-center">
-              <p className="text-gray-500 dark:text-gray-400 text-lg">
-                No schedules found
-              </p>
-            </div>
-          ) : (
-            filteredSchedules.map((schedule) => (
-              <div
-                key={schedule.id}
-                className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg overflow-hidden"
-              >
-                {/* Table Header */}
-                <div className="bg-amber-300 px-8 py-5 flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {schedule.grade}
-                  </h3>
-                  <p className="text-lg font-medium text-gray-900">
-                    Adviser: {schedule.adviser}
-                  </p>
-                </div>
-
-                {/* Table Rows */}
-                <div className="divide-y divide-gray-300 dark:divide-gray-600">
-                  {schedule.sections.map((section) => (
-                    <div
-                      key={section.id}
-                      className="flex items-center justify-between px-8 py-5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      {/* Star Icon */}
-                      <div className="flex items-center gap-6 flex-1">
-                        <button
-                          onClick={() => toggleFavorite(schedule.id, section.id)}
-                          className={`transition-all transform hover:scale-110 active:scale-95 ${
-                            section.isFavorite
-                              ? 'text-amber-500'
-                              : 'text-gray-300 dark:text-gray-600 hover:text-amber-400'
-                          }`}
-                          title={section.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                          aria-label={section.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-                        >
-                          <Star 
-                            className="w-5 h-5" 
-                            fill={section.isFavorite ? 'currentColor' : 'none'}
-                            strokeWidth={2}
-                          />
-                        </button>
-
-                        {/* Section Name */}
-                        <div className="w-56 text-center">
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {section.name}
-                          </p>
-                        </div>
-
-                        {/* Room */}
-                        <div className="w-56 text-center">
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {section.room}
-                          </p>
-                        </div>
-
-                        {/* Status Badge */}
-                        <div className="w-56 text-center">
-                          <span className="inline-block px-6 py-2 bg-amber-300/50 text-gray-600 dark:text-gray-700 rounded-xl font-medium">
-                            {section.status}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        <MySchedule 
+          schedules={filteredSchedules}
+          loading={loading}
+          onToggleFavorite={toggleFavorite}
+        />
       ) : (
-        /* Teacher Schedules Table */
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg overflow-hidden">
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
-            </div>
-          ) : (
-            <>
-              {/* Table Header */}
-              <div className="bg-amber-300 px-6 py-4">
-                <div className="grid grid-cols-6 gap-4 text-center font-semibold text-gray-900">
-                  <div>Teacher Name</div>
-                  <div>Subject</div>
-                  <div>Day</div>
-                  <div>Time</div>
-                  <div>Room</div>
-                  <div>Actions</div>
-                </div>
-              </div>
-
-              {/* Table Body */}
-              <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {filteredTeacherSchedules.length === 0 ? (
-                  <div className="p-12 text-center">
-                    <p className="text-gray-500 dark:text-gray-400 text-lg">
-                      No teacher schedules found
-                    </p>
-                  </div>
-                ) : (
-                  filteredTeacherSchedules.map((schedule) => (
-                    <div
-                      key={schedule.id}
-                      className="grid grid-cols-6 gap-4 px-6 py-5 text-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      <div className="flex items-center justify-center">
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {schedule.teacher}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-center">
-                        <p className="text-gray-900 dark:text-white">
-                          {schedule.subject}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-center">
-                        <p className="text-gray-900 dark:text-white">
-                          {schedule.day}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-center">
-                        <p className="text-gray-900 dark:text-white">
-                          {schedule.time}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-center">
-                        <p className="text-gray-900 dark:text-white">
-                          {schedule.room}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-center gap-3">
-                        <button
-                          onClick={() => handleEdit(schedule)}
-                          className="text-amber-500 hover:text-amber-600 transition-colors"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(schedule.id)}
-                          className="text-red-400 hover:text-red-500 transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </>
-          )}
-        </div>
+        <TeacherSchedules 
+          schedules={filteredTeacherSchedules}
+          loading={loading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       )}
 
       {/* Edit Modal */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Edit Schedule
-              </h2>
-              <button
-                onClick={handleCancelEdit}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }} className="space-y-4">
-              {/* Teacher Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Teacher Name
-                </label>
-                <input
-                  type="text"
-                  value={editFormData.teacher}
-                  onChange={(e) => setEditFormData({ ...editFormData, teacher: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                  placeholder="Enter teacher name"
-                  required
-                />
-              </div>
-
-              {/* Subject */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Subject
-                </label>
-                <input
-                  type="text"
-                  value={editFormData.subject}
-                  onChange={(e) => setEditFormData({ ...editFormData, subject: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                  placeholder="Enter subject"
-                  required
-                />
-              </div>
-
-              {/* Day */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Day
-                </label>
-                <select
-                  value={editFormData.day}
-                  onChange={(e) => setEditFormData({ ...editFormData, day: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                  required
-                >
-                  <option value="">Select day</option>
-                  <option value="Monday">Monday</option>
-                  <option value="Tuesday">Tuesday</option>
-                  <option value="Wednesday">Wednesday</option>
-                  <option value="Thursday">Thursday</option>
-                  <option value="Friday">Friday</option>
-                </select>
-              </div>
-
-              {/* Time */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Time
-                </label>
-                <input
-                  type="text"
-                  value={editFormData.time}
-                  onChange={(e) => setEditFormData({ ...editFormData, time: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                  placeholder="e.g., 8:00 AM - 9:00 AM"
-                  required
-                />
-              </div>
-
-              {/* Room */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Room
-                </label>
-                <input
-                  type="text"
-                  value={editFormData.room}
-                  onChange={(e) => setEditFormData({ ...editFormData, room: e.target.value })}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                  placeholder="Enter room number"
-                  required
-                />
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-amber-300 text-gray-900 rounded-lg hover:bg-amber-400 transition-colors font-medium flex items-center justify-center gap-2"
-                >
-                  <Save className="w-4 h-4" />
-                  Save Changes
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <EditScheduleModal
+        isOpen={isEditModalOpen}
+        schedule={editingSchedule}
+        formData={editFormData}
+        onClose={handleCancelEdit}
+        onSave={handleSaveEdit}
+        onChange={setEditFormData}
+      />
 
       {/* Add New Class Modal */}
-      {isAddClassModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Add New Class
-              </h2>
-              <button
-                onClick={handleCancelAddClass}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitAddClass} className="space-y-4">
-              {/* Grade Level Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Grade Level *
-                </label>
-                {gradeLevels.length === 0 ? (
-                  <div className="space-y-3">
-                    <select
-                      disabled
-                      className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                    >
-                      <option value="">Loading grade levels...</option>
-                    </select>
-                    <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3">
-                      <p className="text-sm text-amber-800 dark:text-amber-200">
-                        <strong>No grade levels found.</strong> The database may need to be initialized. 
-                        Please run the seed script: <code className="bg-amber-100 dark:bg-amber-900 px-1 py-0.5 rounded">backend/seeders/seed-teaching-schedule-data.sql</code>
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <select
-                    value={addClassFormData.gradeLevelId}
-                    onChange={(e) => handleGradeLevelChange(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                    required
-                  >
-                    <option value="">Select Grade Level</option>
-                    {gradeLevels.filter(grade => grade.id <= 6).map(grade => (
-                      <option key={grade.id} value={grade.id}>
-                        {grade.name.toLowerCase().includes('grade') ? grade.name : `Grade ${grade.name}`}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              {/* Section Selection with Student Count */}
-              {addClassFormData.gradeLevelId && (
-                <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Section ({addClassFormData.gradeLevelId ? getSectionTheme(parseInt(addClassFormData.gradeLevelId)).name : 'Theme Names'}) *
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => handleCreateSectionsForGrade(addClassFormData.gradeLevelId)}
-                      className="text-xs text-amber-600 hover:text-amber-700 font-medium"
-                      disabled={!addClassFormData.gradeLevelId}
-                    >
-                      + Create Sections
-                    </button>
-                  </div>
-                  {sectionsData.length > 0 ? (
-                    <div className="grid grid-cols-1 gap-2">
-                      {sectionsData.map(section => (
-                        <label
-                          key={section.sectionId}
-                          className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                            addClassFormData.sectionId === section.sectionId.toString()
-                              ? 'border-amber-500 bg-amber-50 dark:bg-amber-900/20'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-amber-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="radio"
-                              name="section"
-                              value={section.sectionId}
-                              checked={addClassFormData.sectionId === section.sectionId.toString()}
-                              onChange={(e) => setAddClassFormData({...addClassFormData, sectionId: e.target.value})}
-                              className="w-4 h-4 text-amber-500 focus:ring-amber-500"
-                            />
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-white">
-                                Section {section.sectionName}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {section.studentCount}/{section.maxCapacity} students
-                                {section.studentCount >= section.maxCapacity && (
-                                  <span className="ml-2 text-red-500 font-medium">• FULL</span>
-                                )}
-                              </p>
-                            </div>
-                          </div>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            section.status === 'Full' ? 'bg-red-100 text-red-700' :
-                            section.status === 'Almost Full' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>
-                            {section.status}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
-                      <p>No sections found for this grade.</p>
-                      <p className="text-xs mt-1">Theme: <span className="font-medium text-amber-600">{getSectionTheme(parseInt(addClassFormData.gradeLevelId)).name}</span></p>
-                      <button
-                        type="button"
-                        onClick={() => handleCreateSectionsForGrade(addClassFormData.gradeLevelId)}
-                        className="mt-2 text-amber-600 hover:text-amber-700 font-medium text-sm"
-                      >
-                        Click here to create sections
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Day of Week */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Day of Week *
-                </label>
-                <select
-                  value={addClassFormData.dayOfWeek}
-                  onChange={(e) => setAddClassFormData({...addClassFormData, dayOfWeek: e.target.value})}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                  required
-                >
-                  <option value="Monday">Monday</option>
-                  <option value="Tuesday">Tuesday</option>
-                  <option value="Wednesday">Wednesday</option>
-                  <option value="Thursday">Thursday</option>
-                  <option value="Friday">Friday</option>
-                  <option value="Saturday">Saturday</option>
-                  <option value="Sunday">Sunday</option>
-                </select>
-              </div>
-
-              {/* Time Range */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Start Time *
-                  </label>
-                  <input
-                    type="time"
-                    value={addClassFormData.startTime}
-                    onChange={(e) => setAddClassFormData({...addClassFormData, startTime: e.target.value})}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    End Time *
-                  </label>
-                  <input
-                    type="time"
-                    value={addClassFormData.endTime}
-                    onChange={(e) => setAddClassFormData({...addClassFormData, endTime: e.target.value})}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Room Number */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Room Number
-                </label>
-                <input
-                  type="text"
-                  value={addClassFormData.roomNumber}
-                  onChange={(e) => setAddClassFormData({...addClassFormData, roomNumber: e.target.value})}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
-                  placeholder="e.g., Room 101 (optional)"
-                />
-              </div>
-
-              {/* Info Box */}
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  <strong>Note:</strong> Each section can hold a maximum of 15 students. 
-                  When a section is full, new students will be automatically assigned to the next available section.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={handleCancelAddClass}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-amber-300 text-gray-900 rounded-lg hover:bg-amber-400 transition-colors font-medium"
-                >
-                  Add Class
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <AddClassModal
+        isOpen={isAddClassModalOpen}
+        formData={addClassFormData}
+        gradeLevels={gradeLevels}
+        sectionsData={sectionsData}
+        activeSchoolYear={activeSchoolYear}
+        onClose={handleCancelAddClass}
+        onSubmit={handleSubmitAddClass}
+        onChange={setAddClassFormData}
+        onGradeLevelChange={handleGradeLevelChange}
+        onCreateSections={handleCreateSectionsForGrade}
+        getSectionTheme={getSectionTheme}
+      />
 
       {/* Create Schedule Modal */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#342825] rounded-[35px] shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 relative">
-            {/* Header */}
-            <div className="mb-6">
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4" style={{ textShadow: '0px 2px 2px rgba(0,0,0,0.5)' }}>
-                Create Schedule
-              </h2>
-              <button
-                onClick={handleCancelCreate}
-                className="absolute top-5 right-5 text-white hover:text-gray-300 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitSchedule} className="space-y-6">
-              {/* Select Teacher */}
-              <div>
-                <label className="block text-sm text-white mb-2">Select Teacher:</label>
-                <div className="relative">
-                  <select
-                    value={createFormData.teacher}
-                    onChange={(e) => handleTeacherChange(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-[#f4d77d] bg-transparent text-[#f4d77d] text-sm focus:ring-2 focus:ring-[#f4d77d] focus:border-transparent outline-none appearance-none cursor-pointer"
-                    required
-                  >
-                    <option value="" className="bg-[#342825]">Select Teacher</option>
-                    {teachers.map((teacher) => (
-                      <option 
-                        key={teacher.id} 
-                        value={teacher.id} 
-                        className="bg-[#342825]"
-                      >
-                        {teacher.fullName} {teacher.specialization ? `- ${teacher.specialization}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#f4d77d] pointer-events-none" />
-                </div>
-              </div>
-
-              {/* Display Assigned Sections */}
-              {createFormData.teacher && (
-                <div className="space-y-4">
-                  <div className="border-t border-gray-600 pt-4">
-                    <h3 className="text-lg font-semibold text-white mb-3">Assigned Grade and Section:</h3>
-                    {teacherSections.length === 0 ? (
-                      <p className="text-sm text-gray-400">No sections assigned to this teacher</p>
-                    ) : (
-                      <div className="space-y-3">
-                        {teacherSections.map((section) => (
-                          <div 
-                            key={section.id} 
-                            className="bg-[#f4d77d]/10 border border-[#f4d77d]/30 rounded-xl p-4"
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <p className="text-lg font-semibold text-[#f4d77d]">
-                                {section.gradeLevel} - {section.sectionName}
-                              </p>
-                              <span className="text-xs text-gray-400">
-                                {section.studentCount}/{section.maxCapacity} students
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-400">School Year: {section.schoolYear}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <div className="flex gap-3 justify-end mt-8">
-                <button
-                  type="button"
-                  onClick={handleCancelCreate}
-                  className="px-6 py-2 bg-gray-600 text-white rounded-[20px] font-medium hover:bg-gray-700 transition-colors text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-8 py-2 bg-[#f4d77d] text-[#1a1004] rounded-[20px] font-medium hover:bg-[#f4d77d]/90 transition-colors text-sm"
-                  disabled={!createFormData.teacher || teacherSections.length === 0}
-                >
-                  View Schedule
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CreateScheduleModal
+        isOpen={isCreateModalOpen}
+        formData={createFormData}
+        teachers={teachers}
+        subjects={subjects}
+        onClose={handleCancelCreate}
+        onSubmit={handleSubmitSchedule}
+        onTeacherChange={handleTeacherChange}
+        onSubjectChange={handleSubjectChange}
+        onRoomChange={(room) => setCreateFormData({ ...createFormData, room })}
+      />
     </div>
   );
 };
