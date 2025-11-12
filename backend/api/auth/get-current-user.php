@@ -64,7 +64,10 @@ if ($userType === 'Teacher') {
             'teacherProfileId' => $userData['TeacherProfileID'],
             'employeeNumber' => $userData['EmployeeNumber'],
             'specialization' => $userData['Specialization'],
-            'hireDate' => $userData['HireDate']
+            'hireDate' => $userData['HireDate'],
+            'roleId' => $userData['RoleID'] ?? null,
+            'roleName' => $userData['RoleName'] ?? null,
+            'roleDescription' => $userData['RoleDescription'] ?? null
         ]
     ]);
 } else {
