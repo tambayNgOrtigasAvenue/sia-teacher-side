@@ -52,40 +52,50 @@ try {
     $db->beginTransaction();
     
     // Validate required fields
-    if (empty($input['teacherProfileId']) || empty($input['sectionId']) || empty($input['timeSlots'])) {
-        throw new Exception('Missing required fields: teacherProfileId, sectionId, or timeSlots.');
+    if (empty($input['teacherProfileId']) || empty($input['sectionId']) || empty($input['schedule'])) {
+        throw new Exception('Missing required fields: teacherProfileId, sectionId, or schedule.');
     }
     
     $teacherProfileId = $input['teacherProfileId'];
     $sectionId = $input['sectionId'];
-    $room = $input['room'] ?? 'TBD';
     $day = $input['day'] ?? 'Monday';
-    $timeSlots = $input['timeSlots'];
+    $scheduleSlots = $input['schedule'];
+    
+    // Get room number from section table
+    $sectionQuery = "SELECT RoomNumber FROM section WHERE SectionID = :sectionId";
+    $stmt = $db->prepare($sectionQuery);
+    $stmt->bindParam(':sectionId', $sectionId);
+    $stmt->execute();
+    $sectionData = $stmt->fetch(PDO::FETCH_ASSOC);
+    $room = $sectionData['RoomNumber'] ?? 'TBD';
+    
+    // First, delete existing schedules for this teacher and section
+    $deleteQuery = "
+        DELETE FROM classschedule 
+        WHERE TeacherProfileID = :teacherProfileId 
+        AND SectionID = :sectionId
+    ";
+    $stmt = $db->prepare($deleteQuery);
+    $stmt->bindParam(':teacherProfileId', $teacherProfileId);
+    $stmt->bindParam(':sectionId', $sectionId);
+    $stmt->execute();
     
     $insertedCount = 0;
     
     // Insert each time slot as a schedule entry
-    foreach ($timeSlots as $slot) {
+    foreach ($scheduleSlots as $slot) {
+        // Skip if subject, startTime, or endTime is missing
         if (empty($slot['subject']) || empty($slot['startTime']) || empty($slot['endTime'])) {
-            continue; // Skip empty slots
+            continue;
         }
         
-        // Get or create subject
-        $subjectQuery = "SELECT SubjectID FROM subject WHERE SubjectName = :subjectName LIMIT 1";
-        $stmt = $db->prepare($subjectQuery);
-        $stmt->bindParam(':subjectName', $slot['subject']);
-        $stmt->execute();
-        $subject = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Convert time to 24-hour format
+        $startTime = date('H:i:s', strtotime($slot['startTime']));
+        $endTime = date('H:i:s', strtotime($slot['endTime']));
         
-        if (!$subject) {
-            // Create subject if it doesn't exist
-            $insertSubjectQuery = "INSERT INTO subject (SubjectName) VALUES (:subjectName)";
-            $stmt = $db->prepare($insertSubjectQuery);
-            $stmt->bindParam(':subjectName', $slot['subject']);
-            $stmt->execute();
-            $subjectId = $db->lastInsertId();
-        } else {
-            $subjectId = $subject['SubjectID'];
+        // Validate time conversion
+        if ($startTime === false || $endTime === false) {
+            continue; // Skip invalid time formats
         }
         
         // Insert schedule
@@ -97,13 +107,13 @@ try {
         ";
         
         $stmt = $db->prepare($insertQuery);
-        $stmt->bindParam(':sectionId', $sectionId);
-        $stmt->bindParam(':subjectId', $subjectId);
-        $stmt->bindParam(':teacherProfileId', $teacherProfileId);
-        $stmt->bindParam(':dayOfWeek', $day);
-        $stmt->bindParam(':startTime', $slot['startTime']);
-        $stmt->bindParam(':endTime', $slot['endTime']);
-        $stmt->bindParam(':room', $room);
+        $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
+        $stmt->bindParam(':subjectId', $slot['subject'], PDO::PARAM_INT);
+        $stmt->bindParam(':teacherProfileId', $teacherProfileId, PDO::PARAM_INT);
+        $stmt->bindParam(':dayOfWeek', $day, PDO::PARAM_STR);
+        $stmt->bindParam(':startTime', $startTime, PDO::PARAM_STR);
+        $stmt->bindParam(':endTime', $endTime, PDO::PARAM_STR);
+        $stmt->bindParam(':room', $room, PDO::PARAM_STR);
         $stmt->execute();
         
         $insertedCount++;
@@ -114,7 +124,7 @@ try {
     http_response_code(201);
     echo json_encode([
         'success' => true,
-        'message' => "Schedule created successfully! ($insertedCount time slots added)"
+        'message' => "Schedule saved successfully! ($insertedCount time slots added)"
     ]);
     
 } catch (Exception $e) {

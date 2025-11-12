@@ -60,19 +60,23 @@ try {
     }
     
     // Get teacher's sections grouped by grade
+    // This includes both sections with schedules AND sections assigned as adviser
     $query = "
         SELECT DISTINCT
             gl.GradeLevelID,
             gl.LevelName as grade,
             sec.SectionID,
             sec.SectionName as sectionName,
-            cs.RoomNumber as room,
-            ss.StatusName as status
-        FROM classschedule cs
-        JOIN section sec ON cs.SectionID = sec.SectionID
+            COALESCE(cs.RoomNumber, cs.RoomNumber, 'TBD') as room,
+            CASE 
+                WHEN cs.ScheduleStatusID IS NOT NULL THEN ss.StatusName
+                ELSE 'Pending'
+            END as status
+        FROM section sec
         JOIN gradelevel gl ON sec.GradeLevelID = gl.GradeLevelID
+        LEFT JOIN classschedule cs ON cs.SectionID = sec.SectionID AND cs.TeacherProfileID = :teacherProfileId
         LEFT JOIN schedulestatus ss ON cs.ScheduleStatusID = ss.StatusID
-        WHERE cs.TeacherProfileID = :teacherProfileId
+        WHERE sec.AdviserTeacherID = :teacherProfileId
         ORDER BY gl.LevelName, sec.SectionName
     ";
     
