@@ -1,0 +1,156 @@
+/**
+ * Role-based Permission Utilities
+ * Handles permission checks for different teacher roles
+ */
+
+// Role IDs as defined in the database
+export const ROLES = {
+  TEACHER: 1,              // Regular Teacher - Limited access
+  SUPER_TEACHER: 2,        // Super Teacher - Full access
+  ASSISTANT_TEACHER: 3     // Assistant Teacher - Very limited access
+};
+
+// Role Names
+export const ROLE_NAMES = {
+  1: 'Teacher',
+  2: 'Super Teacher',
+  3: 'Assistant Teacher'
+};
+
+/**
+ * Check if user is a Super Teacher
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const isSuperTeacher = (user) => {
+  return user?.roleId === ROLES.SUPER_TEACHER;
+};
+
+/**
+ * Check if user is a regular Teacher
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const isRegularTeacher = (user) => {
+  return user?.roleId === ROLES.TEACHER;
+};
+
+/**
+ * Check if user is an Assistant Teacher
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const isAssistantTeacher = (user) => {
+  return user?.roleId === ROLES.ASSISTANT_TEACHER;
+};
+
+/**
+ * Check if user can create/edit schedules for all teachers
+ * Only Super Teachers can do this
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const canManageAllSchedules = (user) => {
+  return isSuperTeacher(user);
+};
+
+/**
+ * Check if user can add/edit grade levels and sections
+ * Only Super Teachers can do this
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const canManageGradeLevelsAndSections = (user) => {
+  return isSuperTeacher(user);
+};
+
+/**
+ * Check if user can submit grades
+ * Both Regular Teachers and Super Teachers can submit grades
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const canSubmitGrades = (user) => {
+  return isRegularTeacher(user) || isSuperTeacher(user);
+};
+
+/**
+ * Check if user can view students
+ * All teacher types can view students
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const canViewStudents = (user) => {
+  return user?.roleId !== undefined;
+};
+
+/**
+ * Check if user can update their own profile
+ * All teachers can update their profile (except role)
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const canUpdateOwnProfile = (user) => {
+  return user?.roleId !== undefined;
+};
+
+/**
+ * Check if user can create new class schedules for any teacher
+ * Only Super Teachers have this permission
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const canCreateClassSchedules = (user) => {
+  return isSuperTeacher(user);
+};
+
+/**
+ * Check if user can view their own teaching schedule
+ * All teachers can view their own schedule
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const canViewOwnSchedule = (user) => {
+  return user?.roleId !== undefined;
+};
+
+/**
+ * Check if user can manage announcements
+ * Both Regular and Super Teachers can manage announcements
+ * @param {Object} user - User object from AuthContext
+ * @returns {boolean}
+ */
+export const canManageAnnouncements = (user) => {
+  return isRegularTeacher(user) || isSuperTeacher(user);
+};
+
+/**
+ * Get user role display name
+ * @param {Object} user - User object from AuthContext
+ * @returns {string}
+ */
+export const getUserRoleName = (user) => {
+  return user?.roleName || ROLE_NAMES[user?.roleId] || 'Teacher';
+};
+
+/**
+ * Get all permissions for a user
+ * @param {Object} user - User object from AuthContext
+ * @returns {Object} Object with all permission flags
+ */
+export const getUserPermissions = (user) => {
+  return {
+    isSuperTeacher: isSuperTeacher(user),
+    isRegularTeacher: isRegularTeacher(user),
+    isAssistantTeacher: isAssistantTeacher(user),
+    canManageAllSchedules: canManageAllSchedules(user),
+    canManageGradeLevelsAndSections: canManageGradeLevelsAndSections(user),
+    canSubmitGrades: canSubmitGrades(user),
+    canViewStudents: canViewStudents(user),
+    canUpdateOwnProfile: canUpdateOwnProfile(user),
+    canCreateClassSchedules: canCreateClassSchedules(user),
+    canViewOwnSchedule: canViewOwnSchedule(user),
+    canManageAnnouncements: canManageAnnouncements(user),
+    roleName: getUserRoleName(user)
+  };
+};
