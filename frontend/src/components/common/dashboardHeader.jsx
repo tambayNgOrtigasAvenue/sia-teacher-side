@@ -252,7 +252,8 @@ const DashboardHeader = ({ setMobileOpen }) => {
                                                      <ul className="py-2">
                                                              <li>
                                                                      <Link
-                                                                         to="/student-dashboard/my-account"
+                                                                         to="/teacher-dashboard/settings"
+                                                                         state={{ openMyAccount: true }}
                                                                          onClick={() => setOpenDropdown(null)}
                                                                          className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-600 cursor-pointer flex items-center gap-3"
                                                                      >
