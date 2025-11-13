@@ -6,10 +6,22 @@ import TeacherSchedules from '../schedules/TeacherSchedules';
 import EditScheduleModal from '../schedules/EditScheduleModal';
 import CreateScheduleModal from '../schedules/CreateScheduleModal';
 import AddClassModal from '../schedules/AddClassModal';
+import RoleDebugger from '../debug/RoleDebugger';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
+import { canManageAllSchedules } from '../../utils/permissions';
 
 const TeachingSchedulePage = () => {
+  const { user } = useAuth();
+  const userCanManageAllSchedules = canManageAllSchedules(user);
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('TeachingSchedulePage - User:', user);
+    console.log('TeachingSchedulePage - Can Manage All Schedules:', userCanManageAllSchedules);
+  }, [user, userCanManageAllSchedules]);
+  
   const [activeTab, setActiveTab] = useState('my-schedule');
   const [searchQuery, setSearchQuery] = useState('');
   const [schedules, setSchedules] = useState([]);
@@ -42,19 +54,8 @@ const TeachingSchedulePage = () => {
   const [createFormData, setCreateFormData] = useState({
     teacher: '',
     gradeSection: '',
-    room: '',
     day: 'Monday to Friday',
-    schedule: [
-      { time: '6:30 AM - 7:30 AM', subject: '' },
-      { time: '7:30 AM - 8:30 AM', subject: '' },
-      { time: '8:30 AM - 9:30 AM', subject: '' },
-      { time: '10:00 AM - 11:00 AM', subject: '' },
-      { time: '11:00 AM - 12:00 PM', subject: '' },
-      { time: '12:00 PM - 1:00 PM', subject: '' },
-      { time: '1:00 PM - 2:00 PM', subject: '' },
-      { time: '3:00 PM- 4:00 PM', subject: '' },
-      { time: '4:00 PM - 5:00 PM', subject: '' }
-    ]
+    schedule: []
   });
 
   // Fetch initial options on mount
@@ -455,19 +456,8 @@ const TeachingSchedulePage = () => {
     setCreateFormData({ 
       teacher: teacherId,
       gradeSection: '',
-      room: '',
       day: 'Monday to Friday',
-      schedule: [
-        { time: '6:30 AM - 7:30 AM', subject: '' },
-        { time: '7:30 AM - 8:30 AM', subject: '' },
-        { time: '8:30 AM - 9:30 AM', subject: '' },
-        { time: '10:00 AM - 11:00 AM', subject: '' },
-        { time: '11:00 AM - 12:00 PM', subject: '' },
-        { time: '12:00 PM - 1:00 PM', subject: '' },
-        { time: '1:00 PM - 2:00 PM', subject: '' },
-        { time: '3:00 PM- 4:00 PM', subject: '' },
-        { time: '4:00 PM - 5:00 PM', subject: '' }
-      ]
+      schedule: []
     });
     
     await fetchTeacherSections(teacherId);
@@ -488,7 +478,6 @@ const TeachingSchedulePage = () => {
         setCreateFormData(prev => ({
           ...prev,
           gradeSection: scheduleData.gradeSection,
-          room: scheduleData.room,
           day: scheduleData.day,
           schedule: scheduleData.schedule,
           teacherProfileId: scheduleData.teacherProfileId,
@@ -506,19 +495,8 @@ const TeachingSchedulePage = () => {
     setCreateFormData({
       teacher: '',
       gradeSection: '',
-      room: '',
       day: 'Monday to Friday',
-      schedule: [
-        { time: '6:30 AM - 7:30 AM', subject: '' },
-        { time: '7:30 AM - 8:30 AM', subject: '' },
-        { time: '8:30 AM - 9:30 AM', subject: '' },
-        { time: '10:00 AM - 11:00 AM', subject: '' },
-        { time: '11:00 AM - 12:00 PM', subject: '' },
-        { time: '12:00 PM - 1:00 PM', subject: '' },
-        { time: '1:00 PM - 2:00 PM', subject: '' },
-        { time: '3:00 PM- 4:00 PM', subject: '' },
-        { time: '4:00 PM - 5:00 PM', subject: '' }
-      ]
+      schedule: []
     });
     setTeacherSections([]);
     setSelectedSection(null);
@@ -527,6 +505,24 @@ const TeachingSchedulePage = () => {
   const handleSubjectChange = (index, subjectId) => {
     const newSchedule = [...createFormData.schedule];
     newSchedule[index].subject = subjectId;
+    setCreateFormData({ ...createFormData, schedule: newSchedule });
+  };
+
+  const handleAddTimeSlot = () => {
+    setCreateFormData({
+      ...createFormData,
+      schedule: [...createFormData.schedule, { startTime: '', endTime: '', subject: '' }]
+    });
+  };
+
+  const handleRemoveTimeSlot = (index) => {
+    const newSchedule = createFormData.schedule.filter((_, i) => i !== index);
+    setCreateFormData({ ...createFormData, schedule: newSchedule });
+  };
+
+  const handleTimeChange = (index, field, time) => {
+    const newSchedule = [...createFormData.schedule];
+    newSchedule[index][field] = time;
     setCreateFormData({ ...createFormData, schedule: newSchedule });
   };
 
@@ -544,10 +540,16 @@ const TeachingSchedulePage = () => {
       return;
     }
 
-    // Check if at least one subject is selected
-    const hasSubject = createFormData.schedule.some(slot => slot.subject !== '');
-    if (!hasSubject) {
-      toast.error('Please select at least one subject');
+    // Check if at least one time slot is added
+    if (createFormData.schedule.length === 0) {
+      toast.error('Please add at least one time slot');
+      return;
+    }
+
+    // Check if all time slots have start time, end time, and subject filled
+    const incompleteSlot = createFormData.schedule.find(slot => !slot.startTime || !slot.endTime || !slot.subject);
+    if (incompleteSlot) {
+      toast.error('Please fill in start time, end time, and subject for all time slots');
       return;
     }
     
@@ -557,7 +559,6 @@ const TeachingSchedulePage = () => {
         {
           teacherProfileId: createFormData.teacherProfileId,
           sectionId: createFormData.sectionId,
-          room: createFormData.room,
           day: createFormData.day,
           schedule: createFormData.schedule
         },
@@ -613,19 +614,22 @@ const TeachingSchedulePage = () => {
           >
             My Class Schedule
           </button>
-          <button
-            onClick={() => {
-              setActiveTab('teacher-schedules');
-              setSearchQuery(''); // Clear search when switching tabs
-            }}
-            className={`px-6 py-3 rounded-2xl font-medium transition-all ${
-              activeTab === 'teacher-schedules'
-                ? 'bg-amber-300 text-gray-900 border border-gray-900/20'
-                : 'bg-transparent text-gray-900 dark:text-white border border-gray-900/20 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-gray-800'
-            }`}
-          >
-            Teacher Schedules
-          </button>
+          {/* Only Super Teachers can view/manage all teacher schedules */}
+          {userCanManageAllSchedules && (
+            <button
+              onClick={() => {
+                setActiveTab('teacher-schedules');
+                setSearchQuery(''); // Clear search when switching tabs
+              }}
+              className={`px-6 py-3 rounded-2xl font-medium transition-all ${
+                activeTab === 'teacher-schedules'
+                  ? 'bg-amber-300 text-gray-900 border border-gray-900/20'
+                  : 'bg-transparent text-gray-900 dark:text-white border border-gray-900/20 dark:border-white/20 hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+            >
+              Teacher Schedules
+            </button>
+          )}
         </div>
 
         {/* Search and Create Button */}
@@ -655,7 +659,7 @@ const TeachingSchedulePage = () => {
               </button>
             )}
           </div>
-          {activeTab === 'my-schedule' && (
+          {activeTab === 'my-schedule' && userCanManageAllSchedules && (
             <button
               onClick={handleAddNewClass}
               className="px-6 py-3 bg-amber-300 text-gray-900 rounded-xl font-medium hover:bg-amber-400 transition-colors whitespace-nowrap flex items-center gap-2"
@@ -663,7 +667,7 @@ const TeachingSchedulePage = () => {
               <span>+ Add New Class</span>
             </button>
           )}
-          {activeTab === 'teacher-schedules' && (
+          {activeTab === 'teacher-schedules' && userCanManageAllSchedules && (
             <button
               onClick={handleCreateSchedule}
               className="px-6 py-3 bg-amber-300 text-gray-900 rounded-xl font-medium hover:bg-amber-400 transition-colors whitespace-nowrap"
@@ -735,8 +739,13 @@ const TeachingSchedulePage = () => {
         onSubmit={handleSubmitSchedule}
         onTeacherChange={handleTeacherChange}
         onSubjectChange={handleSubjectChange}
-        onRoomChange={(room) => setCreateFormData({ ...createFormData, room })}
+        onAddTimeSlot={handleAddTimeSlot}
+        onRemoveTimeSlot={handleRemoveTimeSlot}
+        onTimeChange={handleTimeChange}
       />
+
+      {/* Temporary Role Debugger - Remove after testing */}
+      <RoleDebugger />
     </div>
   );
 };

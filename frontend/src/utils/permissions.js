@@ -18,12 +18,37 @@ export const ROLE_NAMES = {
 };
 
 /**
+ * Get user's role ID (handles different casing and string/number conversion)
+ * @param {Object} user - User object from AuthContext
+ * @returns {number|null}
+ */
+const getUserRoleId = (user) => {
+  if (!user) return null;
+  // Handle both roleId and RoleID for backwards compatibility
+  const roleId = user.roleId || user.RoleID || null;
+  // Convert to number if it's a string (database might return as string)
+  return roleId !== null ? parseInt(roleId, 10) : null;
+};
+
+/**
  * Check if user is a Super Teacher
  * @param {Object} user - User object from AuthContext
  * @returns {boolean}
  */
 export const isSuperTeacher = (user) => {
-  return user?.roleId === ROLES.SUPER_TEACHER;
+  const roleId = getUserRoleId(user);
+  const result = roleId === ROLES.SUPER_TEACHER;
+  console.log('isSuperTeacher check:', { 
+    user, 
+    roleId, 
+    roleIdType: typeof roleId,
+    expectedRole: ROLES.SUPER_TEACHER,
+    expectedRoleType: typeof ROLES.SUPER_TEACHER,
+    result,
+    userRoleId: user?.roleId,
+    userRoleID: user?.RoleID
+  });
+  return result;
 };
 
 /**
@@ -32,7 +57,8 @@ export const isSuperTeacher = (user) => {
  * @returns {boolean}
  */
 export const isRegularTeacher = (user) => {
-  return user?.roleId === ROLES.TEACHER;
+  const roleId = getUserRoleId(user);
+  return roleId === ROLES.TEACHER;
 };
 
 /**
@@ -41,7 +67,8 @@ export const isRegularTeacher = (user) => {
  * @returns {boolean}
  */
 export const isAssistantTeacher = (user) => {
-  return user?.roleId === ROLES.ASSISTANT_TEACHER;
+  const roleId = getUserRoleId(user);
+  return roleId === ROLES.ASSISTANT_TEACHER;
 };
 
 /**
@@ -81,7 +108,7 @@ export const canSubmitGrades = (user) => {
  * @returns {boolean}
  */
 export const canViewStudents = (user) => {
-  return user?.roleId !== undefined;
+  return getUserRoleId(user) !== null;
 };
 
 /**
@@ -91,7 +118,7 @@ export const canViewStudents = (user) => {
  * @returns {boolean}
  */
 export const canUpdateOwnProfile = (user) => {
-  return user?.roleId !== undefined;
+  return getUserRoleId(user) !== null;
 };
 
 /**
@@ -111,7 +138,7 @@ export const canCreateClassSchedules = (user) => {
  * @returns {boolean}
  */
 export const canViewOwnSchedule = (user) => {
-  return user?.roleId !== undefined;
+  return getUserRoleId(user) !== null;
 };
 
 /**
@@ -130,7 +157,8 @@ export const canManageAnnouncements = (user) => {
  * @returns {string}
  */
 export const getUserRoleName = (user) => {
-  return user?.roleName || ROLE_NAMES[user?.roleId] || 'Teacher';
+  const roleId = getUserRoleId(user);
+  return user?.roleName || user?.RoleName || ROLE_NAMES[roleId] || 'Teacher';
 };
 
 /**

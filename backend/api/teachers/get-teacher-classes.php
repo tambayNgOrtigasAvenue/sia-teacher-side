@@ -60,17 +60,22 @@ try {
     }
     
     // Get all unique classes/sections assigned to this teacher
+    // This includes sections assigned as adviser, even without schedules
     $classQuery = "
         SELECT DISTINCT
             sec.SectionID as id,
             gl.LevelName as grade,
-            sec.SectionName as section,
-            'active' as status,
+            CONCAT('Section ', sec.SectionName) as section,
+            CASE 
+                WHEN cs.ScheduleStatusID IS NOT NULL THEN 'active'
+                ELSE 'pending'
+            END as status,
             0 as isFavorited
-        FROM classschedule cs
-        JOIN section sec ON cs.SectionID = sec.SectionID
+        FROM section sec
         JOIN gradelevel gl ON sec.GradeLevelID = gl.GradeLevelID
-        WHERE cs.TeacherProfileID = :teacherProfileId
+        LEFT JOIN classschedule cs ON cs.SectionID = sec.SectionID AND cs.TeacherProfileID = :teacherProfileId
+        WHERE sec.AdviserTeacherID = :teacherProfileId
+        GROUP BY sec.SectionID, gl.LevelName, sec.SectionName
         ORDER BY gl.LevelName, sec.SectionName
     ";
     

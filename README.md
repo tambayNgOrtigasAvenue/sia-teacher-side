@@ -872,7 +872,7 @@ git push origin feature/your-feature
     - Tolores, Lorea
     - Garcia, Alexandria
 - **Frontend Layout Developer**: 
-   - [John Rey Calipes](https://github.com/OpenYaji) 
+   - [John Rey Calipes](https://github.com/OpenYaji)
 - **Quality Assurance**:
    - Cabiling, Allyana
 

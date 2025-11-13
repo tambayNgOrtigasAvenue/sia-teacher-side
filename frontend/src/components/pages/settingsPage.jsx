@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import AppearancesTab from '../common/settings/appearancesTab';
 import MyAccountTab from '../common/settings/myAccountTab';
 
@@ -7,7 +8,15 @@ import MyAccountTab from '../common/settings/myAccountTab';
  * Main settings page with tabs for Appearances and My Account
  */
 export default function SettingsPage() {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('Appearances');
+
+  // Check if we should open "My Account" tab based on navigation state
+  useEffect(() => {
+    if (location.state?.openMyAccount) {
+      setActiveTab('My Account');
+    }
+  }, [location.state]);
 
   const tabs = [
     { id: 'Appearances', label: 'Appearances' },

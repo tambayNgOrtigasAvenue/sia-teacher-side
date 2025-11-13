@@ -1,7 +1,11 @@
 import React from 'react';
 import { Edit2, Trash2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { canManageAllSchedules } from '../../utils/permissions';
 
 const TeacherSchedules = ({ schedules, loading, onEdit, onDelete }) => {
+  const { user } = useAuth();
+  const userCanManageAllSchedules = canManageAllSchedules(user);
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -64,20 +68,26 @@ const TeacherSchedules = ({ schedules, loading, onEdit, onDelete }) => {
                 </p>
               </div>
               <div className="flex items-center justify-center gap-3">
-                <button
-                  onClick={() => onEdit(schedule)}
-                  className="text-amber-500 hover:text-amber-600 transition-colors"
-                  title="Edit"
-                >
-                  <Edit2 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => onDelete(schedule.id)}
-                  className="text-red-400 hover:text-red-500 transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                {userCanManageAllSchedules ? (
+                  <>
+                    <button
+                      onClick={() => onEdit(schedule)}
+                      className="text-amber-500 hover:text-amber-600 transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(schedule.id)}
+                      className="text-red-400 hover:text-red-500 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </>
+                ) : (
+                  <span className="text-gray-400 dark:text-gray-500 text-sm">View Only</span>
+                )}
               </div>
             </div>
           ))

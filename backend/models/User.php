@@ -115,7 +115,8 @@ class User {
                 CAST(p.EncryptedPhoneNumber AS CHAR) AS PhoneNumber,
                 CAST(p.EncryptedAddress AS CHAR) AS Address,
                 p.ProfilePictureURL,
-                tp.TeacherProfileID, tp.EmployeeNumber, tp.Specialization, tp.HireDate
+                tp.TeacherProfileID, tp.EmployeeNumber, tp.Specialization, tp.HireDate,
+                ur.RoleID, r.RoleName, r.Description as RoleDescription
             FROM 
                 user u
             JOIN 
@@ -124,6 +125,10 @@ class User {
                 teacherprofile tp ON p.ProfileID = tp.ProfileID
             LEFT JOIN 
                 passwordpolicy pp ON u.UserID = pp.UserID
+            LEFT JOIN
+                userrole ur ON u.UserID = ur.UserID
+            LEFT JOIN
+                role r ON ur.RoleID = r.RoleID
             WHERE 
                 u.UserID = :userId AND u.UserType = 'Teacher'
         ";

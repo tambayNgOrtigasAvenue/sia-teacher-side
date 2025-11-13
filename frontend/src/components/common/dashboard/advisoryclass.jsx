@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const AdvisoryClass = () => {
+  const navigate = useNavigate();
   const [advisoryClasses, setAdvisoryClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -104,12 +106,12 @@ const AdvisoryClass = () => {
                     {item.section}
                   </td>
                   <td className="whitespace-nowrap py-4 px-6 text-right text-sm">
-                    <a
-                      href="#"
-                      className="font-medium text-yellow-600 dark:text-yellow-400 hover:text-yellow-800"
+                    <button
+                      onClick={() => navigate('/teacher-dashboard/my-classes')}
+                      className="font-medium text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 transition-colors"
                     >
                       View Class Details &gt;
-                    </a>
+                    </button>
                   </td>
                 </tr>
               ))}
