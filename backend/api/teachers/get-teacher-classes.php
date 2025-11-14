@@ -64,8 +64,8 @@ try {
     $classQuery = "
         SELECT DISTINCT
             sec.SectionID as id,
-            gl.LevelName as grade,
-            CONCAT('Section ', sec.SectionName) as section,
+            CONCAT('', gl.LevelName) as grade,
+            sec.SectionName as section,
             CASE 
                 WHEN cs.ScheduleStatusID IS NOT NULL THEN 'active'
                 ELSE 'pending'
