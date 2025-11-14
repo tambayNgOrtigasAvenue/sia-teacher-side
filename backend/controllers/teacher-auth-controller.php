@@ -46,11 +46,33 @@ class TeacherAuthController {
             $_SESSION['full_name'] = $teacher['FullName'];
             $_SESSION['user_type'] = $teacher['UserType'];
 
+            // Fetch complete teacher data including role information
+            $teacherData = $this->userModel->getTeacherByUserId($teacher['UserID']);
+            
             return [
                 'success' => true, 
                 'message' => 'Login successful!',
                 'user' => [
-                    'fullName' => $teacher['FullName']
+                    'userId' => $teacherData['UserID'],
+                    'emailAddress' => $teacherData['EmailAddress'],
+                    'userType' => $teacherData['UserType'],
+                    'accountStatus' => $teacherData['AccountStatus'],
+                    'lastLoginDate' => $teacherData['LastLoginDate'],
+                    'profileId' => $teacherData['ProfileID'],
+                    'firstName' => $teacherData['FirstName'],
+                    'lastName' => $teacherData['LastName'],
+                    'middleName' => $teacherData['MiddleName'],
+                    'fullName' => $teacherData['FullName'],
+                    'phoneNumber' => $teacherData['PhoneNumber'] ?? null,
+                    'address' => $teacherData['Address'] ?? null,
+                    'profilePictureURL' => $teacherData['ProfilePictureURL'],
+                    'teacherProfileId' => $teacherData['TeacherProfileID'],
+                    'employeeNumber' => $teacherData['EmployeeNumber'],
+                    'specialization' => $teacherData['Specialization'],
+                    'hireDate' => $teacherData['HireDate'],
+                    'roleId' => $teacherData['RoleID'] ?? null,
+                    'roleName' => $teacherData['RoleName'] ?? null,
+                    'roleDescription' => $teacherData['RoleDescription'] ?? null
                 ]
             ];
         } else {
