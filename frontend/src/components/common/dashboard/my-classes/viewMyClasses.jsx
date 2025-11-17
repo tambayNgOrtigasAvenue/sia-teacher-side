@@ -109,23 +109,14 @@ const ClassRow = ({ classData, onViewClassDetails, onToggleFavorite }) => (
       {classData.section}
     </div>
     
-    {/* Status/Button - Dynamic based on class status */}
+    {/* View Class Details Button - Always show for all classes */}
     <div className="col-span-10 md:col-span-3 flex justify-start md:justify-end">
-      {classData.status === 'pending' ? (
-        // Pending status lozenge
-        <span className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 font-medium py-2 px-5 rounded-full text-sm">
-          Pending
-        </span>
-      ) : (
-        // Active class - show "View Class Details" button
-        // THIS IS THE KEY NAVIGATION TRIGGER
-        <button 
-          onClick={() => onViewClassDetails(classData)}
-          className="bg-amber-400 hover:bg-amber-500 text-gray-800 dark:text-gray-900 font-medium py-2 px-5 rounded-full text-sm transition-colors"
-        >
-          View Class Details
-        </button>
-      )}
+      <button 
+        onClick={() => onViewClassDetails(classData)}
+        className="bg-amber-400 hover:bg-amber-500 text-gray-800 dark:text-gray-900 font-medium py-2 px-5 rounded-full text-sm transition-colors"
+      >
+        View Class Details →
+      </button>
     </div>
   </div>
 );

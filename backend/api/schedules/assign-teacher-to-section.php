@@ -22,14 +22,20 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-// Get the logged-in teacher's ID
-$teacherId = $_SESSION['user_id'];
-
 // Get POST data
 $data = json_decode(file_get_contents('php://input'), true);
 
+$teacherId = $data['teacherId'] ?? null;
 $sectionId = $data['sectionId'] ?? null;
 $roomNumber = $data['roomNumber'] ?? null;
+
+if (!$teacherId) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Teacher ID is required'
+    ]);
+    exit();
+}
 
 if (!$sectionId) {
     echo json_encode([

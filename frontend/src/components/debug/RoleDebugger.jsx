@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { getUserPermissions, ROLES } from '../utils/permissions';
+import { useAuth } from '../../context/AuthContext';
+import { getUserPermissions, ROLES } from '../../utils/permissions';
 
 /**
  * RoleDebugger Component

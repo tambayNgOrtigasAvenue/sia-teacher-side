@@ -42,6 +42,14 @@ export default function InputGradeModal({
     }
   }, [student, selectedQuarter]);
 
+  // Calculate if final grade can be computed
+  const canComputeFinal = student?.grades?.q1 && student?.grades?.q2 && 
+                          student?.grades?.q3 && student?.grades?.q4;
+  const computedFinalGrade = canComputeFinal 
+    ? ((parseFloat(student.grades.q1) + parseFloat(student.grades.q2) + 
+        parseFloat(student.grades.q3) + parseFloat(student.grades.q4)) / 4).toFixed(2)
+    : null;
+
   // Handle Save button click
   const handleSave = () => {
     if (!gradeValue) {
@@ -134,16 +142,6 @@ export default function InputGradeModal({
               </div>
             </div>
 
-            {/* Subject */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Subject
-              </label>
-              <div className="text-lg text-gray-900 font-medium">
-                {subject}
-              </div>
-            </div>
-
             {/* Quarter Selector */}
             <div>
               <label 
@@ -203,6 +201,19 @@ export default function InputGradeModal({
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all resize-none"
               />
             </div>
+
+            {/* Final Grade Display (if all quarters are complete) */}
+            {computedFinalGrade && (
+              <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-semibold text-gray-700">Final Grade (Average):</span>
+                  <span className="text-2xl font-bold text-amber-600">{computedFinalGrade}</span>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">
+                  All quarterly grades are complete. Final grade is automatically calculated.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Modal Footer */}

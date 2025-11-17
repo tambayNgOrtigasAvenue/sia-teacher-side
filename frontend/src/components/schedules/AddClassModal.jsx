@@ -32,6 +32,26 @@ const AddClassModal = ({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4">
+          {/* Teacher Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Select Teacher *
+            </label>
+            <select
+              value={formData.teacherId}
+              onChange={(e) => onChange({...formData, teacherId: e.target.value})}
+              className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-colors"
+              required
+            >
+              <option value="">Select Teacher</option>
+              {formData.teachers && formData.teachers.map(teacher => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.name} ({teacher.employeeNumber})
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Grade Level Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -160,8 +180,8 @@ const AddClassModal = ({
           {/* Info Box */}
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>Note:</strong> By adding this class, you will be assigned as the teacher for the selected section. 
-              You can manage the class schedule and students after assignment.
+              <strong>Note:</strong> The selected teacher will be assigned as the adviser for the selected section. 
+              They can manage the class schedule and students after assignment.
             </p>
           </div>
 

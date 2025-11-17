@@ -98,7 +98,7 @@ export default function ClassManagementApp() {
     }
   };
 
-  // Fetch students for selected section
+  // Fetch students for selected section (for class details - roster only)
   const fetchStudentsForSection = async (sectionId) => {
     try {
       setLoading(true);
@@ -122,6 +122,31 @@ export default function ClassManagementApp() {
     } catch (err) {
       console.error('Error fetching students:', err);
       setError('Error loading students. Please try again.');
+      setStudents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch students with grades for selected section
+  const fetchStudentsWithGrades = async (sectionId) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await axios.get(
+        `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/grades/get-section-grades.php?sectionId=${sectionId}`,
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        setStudents(response.data.data);
+      } else {
+        setError(response.data.message || 'Failed to fetch grades');
+        setStudents([]);
+      }
+    } catch (err) {
+      console.error('Error fetching grades:', err);
+      setError('Error loading grades. Please try again.');
       setStudents([]);
     } finally {
       setLoading(false);
@@ -153,10 +178,14 @@ export default function ClassManagementApp() {
 
   /**
    * handleViewClassGrades
-   * Navigate from class details to grades page
+   * Navigate from class details to grades page and fetch grades
    */
   const handleViewClassGrades = () => {
     setCurrentView('classGrades');
+    // Fetch grades data when navigating to grades page
+    if (selectedClass && selectedClass.id) {
+      fetchStudentsWithGrades(selectedClass.id);
+    }
   };
 
   /**
@@ -191,33 +220,71 @@ export default function ClassManagementApp() {
 
   /**
    * handleSaveGrade
-   * Save a new grade for a student
-   * Updates the students state with the new grade data
+   * Save a new grade for a student to the database
    * 
-   * @param {number} studentId - The ID of the student
+   * @param {number} studentId - The ID of the student (StudentProfileID)
    * @param {object} newGradeData - Object containing grade info (e.g., { q1: 90, remarks: "Excellent" })
    */
-  const handleSaveGrade = (studentId, newGradeData) => {
-    setStudents(prevStudents => 
-      prevStudents.map(student => {
-        if (student.id === studentId) {
-          // Update the student's grades object
-          return {
-            ...student,
-            grades: {
-              ...student.grades,
-              ...newGradeData
+  const handleSaveGrade = async (studentId, newGradeData) => {
+    try {
+      // Extract the quarter and grade value from newGradeData
+      const quarter = Object.keys(newGradeData).find(key => key.startsWith('q'));
+      const gradeValue = newGradeData[quarter];
+      const remarks = newGradeData.remarks || '';
+      
+      if (!quarter || gradeValue === undefined) {
+        throw new Error('Invalid grade data');
+      }
+      
+      // Send to backend
+      const response = await axios.post(
+        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/grades/save-quarterly-grade.php',
+        {
+          studentProfileId: studentId,
+          sectionId: selectedClass.id,
+          quarter: quarter,
+          gradeValue: gradeValue,
+          remarks: remarks
+        },
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        // Update local state with the new grade
+        setStudents(prevStudents => 
+          prevStudents.map(student => {
+            if (student.id === studentId) {
+              const updatedGrades = {
+                ...student.grades,
+                [quarter]: gradeValue,
+                remarks: remarks
+              };
+              
+              // If backend calculated final grade, update it
+              if (response.data.data.finalGrade !== null) {
+                updatedGrades.final = response.data.data.finalGrade;
+              }
+              
+              return {
+                ...student,
+                grades: updatedGrades
+              };
             }
-          };
-        }
-        return student;
-      })
-    );
-    
-    handleCloseGradeModal();
-    
-    // Optional: Show success message
-    console.log(`Grade saved for student ${studentId}:`, newGradeData);
+            return student;
+          })
+        );
+        
+        handleCloseGradeModal();
+        
+        // Show success message (you can add a toast notification here)
+        console.log('Grade saved successfully:', response.data.message);
+      } else {
+        throw new Error(response.data.message || 'Failed to save grade');
+      }
+    } catch (err) {
+      console.error('Error saving grade:', err);
+      alert(err.response?.data?.message || err.message || 'Failed to save grade. Please try again.');
+    }
   };
 
   /**

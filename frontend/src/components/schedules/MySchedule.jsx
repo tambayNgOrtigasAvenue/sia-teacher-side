@@ -1,7 +1,7 @@
 import React from 'react';
 import { Star } from 'lucide-react';
 
-const MySchedule = ({ schedules, loading, onToggleFavorite }) => {
+const MySchedule = ({ schedules, loading, onToggleFavorite, onSectionClick }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -42,7 +42,8 @@ const MySchedule = ({ schedules, loading, onToggleFavorite }) => {
             {schedule.sections.map((section) => (
               <div
                 key={section.id}
-                className="flex items-center justify-between px-8 py-5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                onClick={() => onSectionClick && onSectionClick(schedule, section)}
+                className="flex items-center justify-between px-8 py-5 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
               >
                 {/* Star Icon */}
                 <div className="flex items-center gap-6 flex-1">

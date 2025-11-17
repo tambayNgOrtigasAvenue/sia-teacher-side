@@ -6,7 +6,6 @@ import TeacherSchedules from '../schedules/TeacherSchedules';
 import EditScheduleModal from '../schedules/EditScheduleModal';
 import CreateScheduleModal from '../schedules/CreateScheduleModal';
 import AddClassModal from '../schedules/AddClassModal';
-import RoleDebugger from '../debug/RoleDebugger';
 import axios from 'axios';
 import toast, { Toaster } from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
@@ -15,12 +14,6 @@ import { canManageAllSchedules } from '../../utils/permissions';
 const TeachingSchedulePage = () => {
   const { user } = useAuth();
   const userCanManageAllSchedules = canManageAllSchedules(user);
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('TeachingSchedulePage - User:', user);
-    console.log('TeachingSchedulePage - Can Manage All Schedules:', userCanManageAllSchedules);
-  }, [user, userCanManageAllSchedules]);
   
   const [activeTab, setActiveTab] = useState('my-schedule');
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,9 +38,11 @@ const TeachingSchedulePage = () => {
     room: ''
   });
   const [addClassFormData, setAddClassFormData] = useState({
+    teacherId: '',
     gradeLevelId: '',
     sectionId: '',
-    roomNumber: ''
+    roomNumber: '',
+    teachers: []
   });
   const [teacherSections, setTeacherSections] = useState([]);
   const [selectedSection, setSelectedSection] = useState(null);
@@ -67,6 +62,16 @@ const TeachingSchedulePage = () => {
   useEffect(() => {
     fetchData();
   }, [activeTab]);
+
+  // Update addClassFormData when teachers are loaded
+  useEffect(() => {
+    if (teachers.length > 0) {
+      setAddClassFormData(prev => ({
+        ...prev,
+        teachers: teachers
+      }));
+    }
+  }, [teachers]);
 
   const fetchOptions = async () => {
     try {
@@ -199,6 +204,21 @@ const TeachingSchedulePage = () => {
     // toast.success('Favorite updated');
   };
 
+  // Handle section click to create/edit schedule
+  const handleSectionClick = (grade, section) => {
+    // Set the selected section for the create schedule modal
+    setSelectedSection(section);
+    setCreateFormData({
+      teacher: user?.teacherProfileId || '',
+      gradeSection: section.id,
+      sectionName: section.name,
+      gradeName: grade.grade,
+      day: 'Monday to Friday',
+      schedule: []
+    });
+    setIsCreateModalOpen(true);
+  };
+
   const breadcrumbItems = [
     { label: 'Teaching Schedule', path: '/teacher-dashboard/teaching-schedule' }
   ];
@@ -293,16 +313,22 @@ const TeachingSchedulePage = () => {
     }
   };
 
-  const handleAddNewClass = () => {
+  const handleAddClass = () => {
+    setAddClassFormData(prev => ({
+      ...prev,
+      teachers: teachers || []
+    }));
     setIsAddClassModalOpen(true);
   };
 
   const handleCancelAddClass = () => {
     setIsAddClassModalOpen(false);
     setAddClassFormData({
+      teacherId: '',
       gradeLevelId: '',
       sectionId: '',
-      roomNumber: ''
+      roomNumber: '',
+      teachers: teachers || []
     });
     setSectionsData([]);
   };
@@ -364,6 +390,11 @@ const TeachingSchedulePage = () => {
   const handleSubmitAddClass = async (e) => {
     e.preventDefault();
 
+    if (!addClassFormData.teacherId) {
+      toast.error('Please select a teacher');
+      return;
+    }
+
     if (!addClassFormData.sectionId) {
       toast.error('Please select a section');
       return;
@@ -373,6 +404,7 @@ const TeachingSchedulePage = () => {
       const response = await axios.post(
         'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/schedules/assign-teacher-to-section.php',
         {
+          teacherId: addClassFormData.teacherId,
           sectionId: addClassFormData.sectionId,
           roomNumber: addClassFormData.roomNumber || 'TBD'
         },
@@ -661,7 +693,7 @@ const TeachingSchedulePage = () => {
           </div>
           {activeTab === 'my-schedule' && userCanManageAllSchedules && (
             <button
-              onClick={handleAddNewClass}
+              onClick={handleAddClass}
               className="px-6 py-3 bg-amber-300 text-gray-900 rounded-xl font-medium hover:bg-amber-400 transition-colors whitespace-nowrap flex items-center gap-2"
             >
               <span>+ Add New Class</span>
@@ -694,6 +726,7 @@ const TeachingSchedulePage = () => {
           schedules={filteredSchedules}
           loading={loading}
           onToggleFavorite={toggleFavorite}
+          onSectionClick={handleSectionClick}
         />
       ) : (
         <TeacherSchedules 
@@ -743,9 +776,6 @@ const TeachingSchedulePage = () => {
         onRemoveTimeSlot={handleRemoveTimeSlot}
         onTimeChange={handleTimeChange}
       />
-
-      {/* Temporary Role Debugger - Remove after testing */}
-      <RoleDebugger />
     </div>
   );
 };

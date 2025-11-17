@@ -51,6 +51,7 @@ if (!$db) {
 
 try {
     // Get students in the section with their attendance status
+    // Students are linked to sections through the enrollment table
     $studentQuery = "
         SELECT 
             sp.StudentProfileID as id,
@@ -61,12 +62,19 @@ try {
             NULL as grade
         FROM studentprofile sp
         JOIN profile p ON sp.ProfileID = p.ProfileID
-        WHERE sp.SectionID = :sectionId
+        JOIN enrollment e ON sp.StudentProfileID = e.StudentProfileID
+        WHERE e.SectionID = :sectionId
+        AND e.EnrollmentID IN (
+            SELECT MAX(EnrollmentID) 
+            FROM enrollment 
+            WHERE StudentProfileID = sp.StudentProfileID
+            GROUP BY StudentProfileID
+        )
         ORDER BY p.LastName, p.FirstName
     ";
     
     $stmt = $db->prepare($studentQuery);
-    $stmt->bindParam(':sectionId', $sectionId);
+    $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
     $stmt->execute();
     
     $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
