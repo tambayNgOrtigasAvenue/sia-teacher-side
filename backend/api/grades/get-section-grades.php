@@ -30,13 +30,39 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Get section ID from query parameter
+    // Get section ID from query parameters
     if (!isset($_GET['sectionId'])) {
         throw new Exception('Section ID is required');
     }
     
     $sectionId = (int)$_GET['sectionId'];
-    $subjectId = 1; // Default subject ID, adjust as needed
+    
+    // If subjectId is provided, use it; otherwise get first subject for the grade level
+    if (isset($_GET['subjectId'])) {
+        $subjectId = (int)$_GET['subjectId'];
+    } else {
+        // Get first subject for this section's grade level
+        $subjectQuery = "
+            SELECT s.SubjectID
+            FROM subject s
+            JOIN section sec ON s.GradeLevelID = sec.GradeLevelID
+            WHERE sec.SectionID = :sectionId
+            AND s.IsActive = 1
+            ORDER BY s.SubjectName ASC
+            LIMIT 1
+        ";
+        
+        $subjectStmt = $db->prepare($subjectQuery);
+        $subjectStmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
+        $subjectStmt->execute();
+        $subjectResult = $subjectStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$subjectResult) {
+            throw new Exception('No subjects found for this grade level');
+        }
+        
+        $subjectId = (int)$subjectResult['SubjectID'];
+    }
     
     // Fetch all students with their grades for this section
     $query = "

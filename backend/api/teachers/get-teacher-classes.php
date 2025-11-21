@@ -64,6 +64,7 @@ try {
     $classQuery = "
         SELECT DISTINCT
             sec.SectionID as id,
+            sec.GradeLevelID as gradeLevelId,
             CONCAT('', gl.LevelName) as grade,
             sec.SectionName as section,
             CASE 
@@ -75,7 +76,7 @@ try {
         JOIN gradelevel gl ON sec.GradeLevelID = gl.GradeLevelID
         LEFT JOIN classschedule cs ON cs.SectionID = sec.SectionID AND cs.TeacherProfileID = :teacherProfileId
         WHERE sec.AdviserTeacherID = :teacherProfileId
-        GROUP BY sec.SectionID, gl.LevelName, sec.SectionName
+        GROUP BY sec.SectionID, sec.GradeLevelID, gl.LevelName, sec.SectionName
         ORDER BY gl.LevelName, sec.SectionName
     ";
     

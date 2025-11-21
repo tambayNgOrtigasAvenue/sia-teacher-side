@@ -3,6 +3,7 @@ import axios from 'axios';
 import MyClassesPage from './myClassesPage.jsx';
 import ClassDetailsPage from './classDetailsPage.jsx';
 import ClassGradesPage from './classGradesPage.jsx';
+import StudentGradesPage from './studentGradesPage.jsx';
 import InputGradeModal from '../modals/inputGradeModal.jsx';
 
 /**
@@ -25,7 +26,8 @@ export default function ClassManagementApp() {
    * currentView: Controls which "page" is visible
    * - 'classList': Shows MyClassesPage
    * - 'classDetails': Shows ClassDetailsPage (student roster)
-   * - 'classGrades': Shows ClassGradesPage (grade input table)
+   * - 'classGrades': Shows ClassGradesPage (all students with quarterly grades)
+   * - 'studentGrades': Shows StudentGradesPage (all subjects for one student)
    */
   const [currentView, setCurrentView] = useState('classList');
   
@@ -33,6 +35,16 @@ export default function ClassManagementApp() {
    * selectedClass: Stores the data of the class that the user clicks on
    */
   const [selectedClass, setSelectedClass] = useState(null);
+
+  /**
+   * selectedStudent: Stores the student whose grades are being viewed
+   */
+  const [selectedStudent, setSelectedStudent] = useState(null);
+
+  /**
+   * gradeRefreshKey: Incremented after grade save to trigger refresh in StudentGradesPage
+   */
+  const [gradeRefreshKey, setGradeRefreshKey] = useState(0);
 
   // ===== MODAL STATE =====
   
@@ -128,13 +140,13 @@ export default function ClassManagementApp() {
     }
   };
 
-  // Fetch students with grades for selected section
+  // Fetch students with grades for selected section (quarterly averages across all subjects)
   const fetchStudentsWithGrades = async (sectionId) => {
     try {
       setLoading(true);
       setError(null);
       const response = await axios.get(
-        `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/grades/get-section-grades.php?sectionId=${sectionId}`,
+        `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/grades/get-section-quarterly-grades.php?sectionId=${sectionId}`,
         { withCredentials: true }
       );
       
@@ -178,7 +190,7 @@ export default function ClassManagementApp() {
 
   /**
    * handleViewClassGrades
-   * Navigate from class details to grades page and fetch grades
+   * Navigate from class details to class grades page (all students quarterly grades)
    */
   const handleViewClassGrades = () => {
     setCurrentView('classGrades');
@@ -189,10 +201,20 @@ export default function ClassManagementApp() {
   };
 
   /**
+   * handleViewStudentGrades
+   * Navigate from class details to student grades page (one student all subjects)
+   */
+  const handleViewStudentGrades = (studentData) => {
+    setSelectedStudent(studentData);
+    setCurrentView('studentGrades');
+  };
+
+  /**
    * handleBackToDetails
-   * Navigate from grades page back to class details
+   * Navigate from grades pages back to class details
    */
   const handleBackToDetails = () => {
+    setSelectedStudent(null);
     setCurrentView('classDetails');
   };
 
@@ -200,7 +222,7 @@ export default function ClassManagementApp() {
 
   /**
    * handleOpenGradeModal
-   * Open the grade input modal for a specific student
+   * Open the grade input modal for a specific student and subject
    */
   const handleOpenGradeModal = (studentData) => {
     setStudentToGrade(studentData);
@@ -227,13 +249,14 @@ export default function ClassManagementApp() {
    */
   const handleSaveGrade = async (studentId, newGradeData) => {
     try {
-      // Extract the quarter and grade value from newGradeData
+      // Extract the quarter, subject, and grade value from newGradeData
       const quarter = Object.keys(newGradeData).find(key => key.startsWith('q'));
       const gradeValue = newGradeData[quarter];
       const remarks = newGradeData.remarks || '';
+      const subjectId = newGradeData.subjectId;
       
-      if (!quarter || gradeValue === undefined) {
-        throw new Error('Invalid grade data');
+      if (!quarter || gradeValue === undefined || !subjectId) {
+        throw new Error('Invalid grade data - missing quarter, grade value, or subject');
       }
       
       // Send to backend
@@ -242,6 +265,7 @@ export default function ClassManagementApp() {
         {
           studentProfileId: studentId,
           sectionId: selectedClass.id,
+          subjectId: subjectId,
           quarter: quarter,
           gradeValue: gradeValue,
           remarks: remarks
@@ -275,6 +299,9 @@ export default function ClassManagementApp() {
         );
         
         handleCloseGradeModal();
+        
+        // Trigger refresh for StudentGradesPage
+        setGradeRefreshKey(prev => prev + 1);
         
         // Show success message (you can add a toast notification here)
         console.log('Grade saved successfully:', response.data.message);
@@ -328,6 +355,7 @@ export default function ClassManagementApp() {
           error={error}
           onBack={handleBackToList}
           onViewGrades={handleViewClassGrades}
+          onViewStudentInfo={handleViewStudentGrades}
         />
       )}
 
@@ -338,6 +366,15 @@ export default function ClassManagementApp() {
           loading={loading}
           error={error}
           onBack={handleBackToDetails}
+        />
+      )}
+
+      {currentView === 'studentGrades' && (
+        <StudentGradesPage 
+          key={gradeRefreshKey}
+          student={selectedStudent}
+          classData={selectedClass}
+          onBack={handleBackToDetails}
           onInputGrade={handleOpenGradeModal}
         />
       )}
@@ -347,7 +384,7 @@ export default function ClassManagementApp() {
         <InputGradeModal 
           isOpen={isGradeModalOpen}
           student={studentToGrade}
-          subject={selectedClass?.subject || 'Mathematics'}
+          gradeLevelId={selectedClass?.gradeLevelId}
           allStudents={students}
           onClose={handleCloseGradeModal}
           onSave={handleSaveGrade}

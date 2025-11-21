@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
 /**
  * InputGradeModal Component
@@ -26,13 +27,48 @@ export default function InputGradeModal({
   onClose, 
   onSave, 
   student,
-  subject = "Mathematics",
+  gradeLevelId,
   allStudents = []
 }) {
   // State for form inputs
   const [selectedQuarter, setSelectedQuarter] = useState('q1');
+  const [selectedSubject, setSelectedSubject] = useState('');
+  const [subjects, setSubjects] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [gradeValue, setGradeValue] = useState('');
   const [remarks, setRemarks] = useState('');
+
+  // Fetch subjects when grade level changes
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      if (!gradeLevelId) return;
+      
+      try {
+        setLoadingSubjects(true);
+        const response = await axios.get(
+          `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/subjects/get-subjects-by-grade.php?gradeLevelId=${gradeLevelId}`,
+          { withCredentials: true }
+        );
+        
+        if (response.data.success) {
+          setSubjects(response.data.data);
+          
+          // If student has selectedSubject, use that; otherwise use first subject
+          if (student?.selectedSubject) {
+            setSelectedSubject(student.selectedSubject.id.toString());
+          } else if (response.data.data.length > 0 && !selectedSubject) {
+            setSelectedSubject(response.data.data[0].id.toString());
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching subjects:', error);
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+    
+    fetchSubjects();
+  }, [gradeLevelId, student?.selectedSubject]);
 
   // Auto-populate existing grade data when student or quarter changes
   useEffect(() => {
@@ -57,9 +93,15 @@ export default function InputGradeModal({
       return;
     }
 
+    if (!selectedSubject) {
+      alert('Please select a subject');
+      return;
+    }
+
     const gradeData = {
       [selectedQuarter]: parseFloat(gradeValue),
-      remarks: remarks.trim()
+      remarks: remarks.trim(),
+      subjectId: parseInt(selectedSubject)
     };
 
     onSave(student.id, gradeData);
@@ -73,9 +115,15 @@ export default function InputGradeModal({
       return;
     }
 
+    if (!selectedSubject) {
+      alert('Please select a subject');
+      return;
+    }
+
     const gradeData = {
       [selectedQuarter]: parseFloat(gradeValue),
-      remarks: remarks.trim()
+      remarks: remarks.trim(),
+      subjectId: parseInt(selectedSubject)
     };
 
     onSave(student.id, gradeData);
@@ -100,6 +148,7 @@ export default function InputGradeModal({
     setSelectedQuarter('q1');
     setGradeValue('');
     setRemarks('');
+    // Don't reset subject selection to maintain context
   };
 
   // Handle modal close
@@ -161,6 +210,36 @@ export default function InputGradeModal({
                 <option value="q3">3rd Quarter</option>
                 <option value="q4">4th Quarter</option>
               </select>
+            </div>
+
+            {/* Subject Selector */}
+            <div>
+              <label 
+                htmlFor="subject-select" 
+                className="block text-sm font-semibold text-gray-700 mb-2"
+              >
+                Subject
+              </label>
+              {loadingSubjects ? (
+                <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                  Loading subjects...
+                </div>
+              ) : (
+                <select
+                  id="subject-select"
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all"
+                  disabled={subjects.length === 0}
+                >
+                  <option value="">Select a subject</option>
+                  {subjects.map((subject) => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name} ({subject.code})
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Grade Input */}

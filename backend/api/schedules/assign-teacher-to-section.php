@@ -118,13 +118,15 @@ try {
         }
     }
 
-    // Update section with the teacher as adviser
+    // Update section with the teacher as adviser and room number
     $stmt = $conn->prepare("
         UPDATE section 
-        SET AdviserTeacherID = :teacherProfileId
+        SET AdviserTeacherID = :teacherProfileId,
+            RoomNumber = :roomNumber
         WHERE SectionID = :sectionId
     ");
     $stmt->bindParam(':teacherProfileId', $teacherProfileId, PDO::PARAM_INT);
+    $stmt->bindParam(':roomNumber', $roomNumber, PDO::PARAM_STR);
     $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
     
     if (!$stmt->execute()) {
@@ -135,7 +137,7 @@ try {
 
     echo json_encode([
         'success' => true,
-        'message' => 'Successfully assigned to ' . $section['grade_level_name'] . ' - Section ' . $section['SectionName'],
+        'message' => 'Successfully assigned to ' . $section['grade_level_name'] . ' - Section ' . $section['SectionName'] . '. Use Teacher Schedules tab to create detailed class schedules.',
         'data' => [
             'sectionId' => $sectionId,
             'sectionName' => $section['SectionName'],

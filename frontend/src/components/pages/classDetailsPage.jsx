@@ -14,7 +14,8 @@ import SearchBarWithFilter from '../common/dashboard/my-classes/searchBarWithFil
  * @param {boolean} loading - Loading state indicator
  * @param {string} error - Error message if any
  * @param {function} onBack - Callback to navigate back to the class list
- * @param {function} onViewGrades - Callback to navigate to class grades page
+ * @param {function} onViewGrades - Callback to navigate to class grades page (all students quarterly)
+ * @param {function} onViewStudentInfo - Callback to navigate to individual student grades page
  */
 export default function ClassDetailsPage({ 
   classData, 
@@ -22,7 +23,8 @@ export default function ClassDetailsPage({
   loading, 
   error, 
   onBack,
-  onViewGrades
+  onViewGrades,
+  onViewStudentInfo
 }) {
   // State for student search and filter
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,7 +88,9 @@ export default function ClassDetailsPage({
    * Navigate to Attendance Page
    */
   const handleViewAttendance = () => {
-    navigate('/teacher-dashboard/attendance');
+    navigate('/teacher-dashboard/attendance', {
+      state: { classData }
+    });
   };
 
   return (
@@ -165,7 +169,7 @@ export default function ClassDetailsPage({
           <p className="mt-4 text-gray-600">Loading students...</p>
         </div>
       ) : (
-        <StudentList students={filteredStudents} />
+        <StudentList students={filteredStudents} onViewStudentInfo={onViewStudentInfo} />
       )}
 
       {/* Footer Action Buttons */}
@@ -194,8 +198,9 @@ export default function ClassDetailsPage({
  * Maps over filtered students to render individual rows.
  * 
  * @param {Array} students - The filtered list of students to display
+ * @param {function} onViewStudentInfo - Callback when View Info button is clicked
  */
-const StudentList = ({ students }) => (
+const StudentList = ({ students, onViewStudentInfo }) => (
   <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
     {/* Table Header */}
     <div className="bg-amber-300 px-6 py-4 grid grid-cols-12 gap-4 items-center">
@@ -218,7 +223,7 @@ const StudentList = ({ students }) => (
     <div>
       {students.length > 0 ? (
         students.map((student) => (
-          <StudentRow key={student.id} studentData={student} />
+          <StudentRow key={student.id} studentData={student} onViewStudentInfo={onViewStudentInfo} />
         ))
       ) : (
         <div className="px-6 py-12 text-center text-gray-500">
@@ -235,11 +240,14 @@ const StudentList = ({ students }) => (
  * 
  * Renders a single row in the student list.
  * Displays student information with conditional styling for attendance.
+ * Has a View Info button to see individual student grades.
  * 
  * @param {object} studentData - The student data to render
+ * @param {function} onViewStudentInfo - Callback when View Info button is clicked
  */
-const StudentRow = ({ studentData }) => (
-  <div className="px-6 py-5 grid grid-cols-12 gap-4 items-center border-b border-gray-200 last:border-b-0">
+const StudentRow = ({ studentData, onViewStudentInfo }) => (
+  <div 
+    className="px-6 py-5 grid grid-cols-12 gap-4 items-center border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
     {/* Last Name */}
     <div className="col-span-3 text-gray-700 font-medium">
       {studentData.lastName}
@@ -270,7 +278,13 @@ const StudentRow = ({ studentData }) => (
 
     {/* View Info Button */}
     <div className="col-span-1 flex justify-end">
-      <button className="bg-amber-300 hover:bg-amber-400 text-gray-800 font-medium py-2 px-4 rounded-full text-sm transition-colors whitespace-nowrap">
+      <button 
+        onClick={(e) => {
+          e.stopPropagation();
+          onViewStudentInfo(studentData);
+        }}
+        className="bg-amber-300 hover:bg-amber-400 text-gray-800 font-medium py-2 px-4 rounded-full text-sm transition-colors whitespace-nowrap"
+      >
         View Info
       </button>
     </div>

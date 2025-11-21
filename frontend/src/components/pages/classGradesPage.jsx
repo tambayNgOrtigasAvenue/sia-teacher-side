@@ -6,22 +6,19 @@ import SearchBarWithFilter from '../common/dashboard/my-classes/searchBarWithFil
  * 
  * Renders the "Class Grades" page for the selected class.
  * Displays a table with student names and their quarter grades.
- * Allows teachers to input grades via modal.
  * 
  * @param {object} classData - The selected class object
  * @param {Array} students - The list of students with their grades
  * @param {boolean} loading - Loading state indicator
  * @param {string} error - Error message if any
  * @param {function} onBack - Callback to navigate back to class details
- * @param {function} onInputGrade - Callback to open grade input modal
  */
 export default function ClassGradesPage({ 
   classData, 
   students, 
   loading, 
   error, 
-  onBack,
-  onInputGrade
+  onBack
 }) {
   // State for student search and filter
   const [searchTerm, setSearchTerm] = useState('');
@@ -89,7 +86,7 @@ export default function ClassGradesPage({
           <p className="mt-4 text-gray-600">Loading grades...</p>
         </div>
       ) : (
-        <StudentGradeList students={filteredStudents} onInputGrade={onInputGrade} />
+        <StudentGradeList students={filteredStudents} />
       )}
     </div>
   );
@@ -102,12 +99,11 @@ export default function ClassGradesPage({
  * Maps over students to render individual rows.
  * 
  * @param {Array} students - The filtered list of students to display
- * @param {function} onInputGrade - Callback to open grade input modal
  */
-const StudentGradeList = ({ students, onInputGrade }) => (
+const StudentGradeList = ({ students }) => (
   <div className="bg-white rounded-2xl shadow-lg overflow-hidden overflow-x-auto">
     {/* Table Header */}
-    <div className="bg-amber-300 px-6 py-4 grid grid-cols-12 gap-2 items-center min-w-[800px]">
+    <div className="bg-amber-300 px-6 py-4 grid grid-cols-9 gap-4 items-center">
       <div className="col-span-2 font-semibold text-gray-700">
         Name
       </div>
@@ -126,10 +122,9 @@ const StudentGradeList = ({ students, onInputGrade }) => (
       <div className="col-span-2 font-semibold text-gray-700 text-center">
         Final Grade
       </div>
-      <div className="col-span-2 font-semibold text-gray-700">
+      <div className="col-span-1 font-semibold text-gray-700 text-center">
         Remarks
       </div>
-      <div className="col-span-2"></div>
     </div>
 
     {/* Table Body */}
@@ -139,7 +134,6 @@ const StudentGradeList = ({ students, onInputGrade }) => (
           <StudentGradeRow 
             key={student.id} 
             studentData={student}
-            onInputGrade={onInputGrade}
           />
         ))
       ) : (
@@ -159,10 +153,9 @@ const StudentGradeList = ({ students, onInputGrade }) => (
  * Displays student name and all their grades (quarter and final).
  * 
  * @param {object} studentData - The student data to render
- * @param {function} onInputGrade - Callback to open grade input modal
  */
-const StudentGradeRow = ({ studentData, onInputGrade }) => (
-  <div className="px-6 py-5 grid grid-cols-12 gap-2 items-center border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors min-w-[800px]">
+const StudentGradeRow = ({ studentData }) => (
+  <div className="px-6 py-5 grid grid-cols-9 gap-4 items-center border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors">
     {/* Student Name */}
     <div className="col-span-2 text-gray-700 font-medium">
       {studentData.lastName}, {studentData.firstName}
@@ -194,18 +187,8 @@ const StudentGradeRow = ({ studentData, onInputGrade }) => (
     </div>
 
     {/* Remarks */}
-    <div className="col-span-2 text-gray-600 text-sm">
+    <div className="col-span-1 text-gray-600 text-sm text-center">
       {studentData.grades.remarks || '-'}
-    </div>
-
-    {/* Input Grade Button */}
-    <div className="col-span-2 flex justify-end">
-      <button 
-        onClick={() => onInputGrade(studentData)}
-        className="bg-amber-300 hover:bg-amber-400 text-gray-800 font-medium py-2 px-4 rounded-full text-sm transition-colors whitespace-nowrap"
-      >
-        Input Grade
-      </button>
     </div>
   </div>
 );

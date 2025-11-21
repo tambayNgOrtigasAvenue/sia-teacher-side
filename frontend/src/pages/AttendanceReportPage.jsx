@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Search, ChevronDown } from 'lucide-react';
 import Breadcrumb from '../components/common/Breadcrumb';
 import axios from 'axios';
 
 const AttendanceReportPage = () => {
+  const location = useLocation();
+  const classData = location.state?.classData;
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -26,24 +29,43 @@ const AttendanceReportPage = () => {
 
   // Fetch attendance report data
   useEffect(() => {
-    fetchAttendanceReport();
-  }, [selectedQuarter]);
+    if (classData?.id && selectedQuarter) {
+      fetchAttendanceReport();
+    } else if (!selectedQuarter) {
+      setLoading(false);
+      setStudents([]);
+      setFilteredStudents([]);
+    }
+  }, [selectedQuarter, classData]);
 
   const fetchAttendanceReport = async () => {
     try {
       setLoading(true);
-      // API call would go here
-      // const response = await axios.get(
-      //   `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/attendance/get-report.php?quarter=${selectedQuarter}`,
-      //   { withCredentials: true }
-      // );
+      setError(null);
       
-      // Mock data for development - empty since no students in database
-      setStudents([]);
-      setFilteredStudents([]);
+      if (!classData?.id) {
+        setError('No class selected');
+        return;
+      }
+      
+      const response = await axios.get(
+        `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/attendance/get-attendance-report.php?sectionId=${classData.id}&quarter=${selectedQuarter}`,
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        setStudents(response.data.data);
+        setFilteredStudents(response.data.data);
+      } else {
+        setError(response.data.message || 'Failed to fetch attendance report');
+        setStudents([]);
+        setFilteredStudents([]);
+      }
     } catch (err) {
       console.error('Error fetching attendance report:', err);
       setError('Error loading attendance report');
+      setStudents([]);
+      setFilteredStudents([]);
     } finally {
       setLoading(false);
     }
@@ -82,7 +104,7 @@ const AttendanceReportPage = () => {
             Attendance Report
           </h1>
           <h2 className="text-xl md:text-2xl text-orange-600 dark:text-orange-500 mt-2">
-            Grade 6 - Section A
+            {classData ? `${classData.grade} - ${classData.section}` : 'No class selected'}
           </h2>
         </div>
 

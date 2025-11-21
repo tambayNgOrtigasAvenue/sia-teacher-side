@@ -1,19 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, ChevronDown, Calendar, X } from 'lucide-react';
 import Breadcrumb from '../components/common/Breadcrumb';
 import axios from 'axios';
 
 const AttendancePage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const classData = location.state?.classData;
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [attendanceFilters, setAttendanceFilters] = useState({
+    Present: false,
+    Absent: false,
+    Late: false,
+    Excused: false
+  });
+  const [summary, setSummary] = useState({
+    total: 0,
+    present: 0,
+    absent: 0,
+    late: 0,
+    excused: 0,
+    notMarked: 0
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [updatingAttendance, setUpdatingAttendance] = useState(false);
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -22,36 +40,40 @@ const AttendancePage = () => {
     { label: 'Attendance' },
   ];
 
-  // Fetch students data
+  // Fetch students data with attendance
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    if (classData?.id) {
+      fetchAttendance();
+    }
+  }, [classData, selectedDate]);
 
-  const fetchStudents = async () => {
+  const fetchAttendance = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Get section ID from URL params or state if available
-      // For now, we'll use a placeholder - you can pass this via navigation state
-      const sectionId = 1; // Replace with actual section ID from navigation
+      if (!classData?.id) {
+        setError('No class selected');
+        return;
+      }
       
       const response = await axios.get(
-        `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/teachers/get-students-by-section.php?sectionId=${sectionId}`,
+        `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/attendance/get-section-attendance.php?sectionId=${classData.id}&date=${selectedDate}`,
         { withCredentials: true }
       );
       
       if (response.data.success) {
-        setStudents(response.data.data);
-        setFilteredStudents(response.data.data);
+        setStudents(response.data.data.students);
+        setFilteredStudents(response.data.data.students);
+        setSummary(response.data.data.summary);
       } else {
-        setError(response.data.message || 'Failed to fetch students');
+        setError(response.data.message || 'Failed to fetch attendance');
         setStudents([]);
         setFilteredStudents([]);
       }
     } catch (err) {
-      console.error('Error fetching students:', err);
-      setError('Error loading students');
+      console.error('Error fetching attendance:', err);
+      setError('Error loading attendance data');
       setStudents([]);
       setFilteredStudents([]);
     } finally {
@@ -59,21 +81,49 @@ const AttendancePage = () => {
     }
   };
 
-  // Handle search
+  // Handle search and filter
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      setFilteredStudents(students);
-    } else {
+    let filtered = students;
+    
+    // Apply search filter
+    if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase();
-      const filtered = students.filter(
+      filtered = filtered.filter(
         (student) =>
           student.lastName.toLowerCase().includes(query) ||
           student.firstName.toLowerCase().includes(query) ||
-          student.middleName.toLowerCase().includes(query)
+          (student.middleName && student.middleName.toLowerCase().includes(query))
       );
-      setFilteredStudents(filtered);
     }
-  }, [searchQuery, students]);
+    
+    // Apply attendance status filter
+    const activeFilters = Object.keys(attendanceFilters).filter(key => attendanceFilters[key]);
+    if (activeFilters.length > 0) {
+      filtered = filtered.filter(student => activeFilters.includes(student.status));
+    }
+    
+    setFilteredStudents(filtered);
+  }, [searchQuery, students, attendanceFilters]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdownId && !event.target.closest('.relative')) {
+        setOpenDropdownId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [openDropdownId]);
+
+  // Handle filter checkbox change
+  const handleFilterChange = (filterName) => {
+    setAttendanceFilters(prev => ({
+      ...prev,
+      [filterName]: !prev[filterName]
+    }));
+  };
 
   const handleDateChange = (e) => {
     setSelectedDate(e.target.value);
@@ -85,7 +135,66 @@ const AttendancePage = () => {
   };
 
   const handleAttendanceReport = () => {
-    navigate('/teacher-dashboard/attendance-report');
+    navigate('/teacher-dashboard/attendance-report', {
+      state: { classData }
+    });
+  };
+
+  const handleStatusChange = async (studentId, newStatus) => {
+    try {
+      setUpdatingAttendance(true);
+      
+      const response = await axios.post(
+        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/attendance/update-attendance.php',
+        {
+          studentId: studentId,
+          status: newStatus,
+          date: selectedDate
+        },
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        // Update local state
+        setStudents(prevStudents => 
+          prevStudents.map(student => 
+            student.id === studentId 
+              ? { ...student, status: newStatus }
+              : student
+          )
+        );
+        
+        // Refresh to update summary
+        await fetchAttendance();
+        setOpenDropdownId(null);
+      } else {
+        alert('Failed to update attendance: ' + response.data.message);
+      }
+    } catch (err) {
+      console.error('Error updating attendance:', err);
+      alert('Error updating attendance. Please try again.');
+    } finally {
+      setUpdatingAttendance(false);
+    }
+  };
+
+  const toggleDropdown = (studentId) => {
+    setOpenDropdownId(openDropdownId === studentId ? null : studentId);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Present':
+        return 'text-green-600 bg-green-50';
+      case 'Absent':
+        return 'text-red-600 bg-red-50';
+      case 'Late':
+        return 'text-yellow-600 bg-yellow-50';
+      case 'Excused':
+        return 'text-blue-600 bg-blue-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
+    }
   };
 
   return (
@@ -102,8 +211,13 @@ const AttendancePage = () => {
             Attendance
           </h1>
           <h2 className="text-xl md:text-2xl text-orange-600 dark:text-orange-500 mt-2">
-            Grade 6 - Section A
+            {classData ? `${classData.grade} - ${classData.section}` : 'No class selected'}
           </h2>
+          {selectedDate && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Date: {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+          )}
         </div>
 
         {/* Search Bar and Date Picker */}
@@ -123,19 +237,43 @@ const AttendancePage = () => {
               {/* Filter Dropdown */}
               {showFilterDropdown && (
                 <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-4 z-10 min-w-[200px]">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">Filter by:</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 font-medium">Filter by status:</p>
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded">
-                      <input type="checkbox" className="rounded text-amber-500 focus:ring-amber-500" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Present</span>
+                      <input 
+                        type="checkbox" 
+                        checked={attendanceFilters.Present}
+                        onChange={() => handleFilterChange('Present')}
+                        className="rounded text-amber-500 focus:ring-amber-500" 
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Present ({summary.present})</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded">
-                      <input type="checkbox" className="rounded text-amber-500 focus:ring-amber-500" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Absent</span>
+                      <input 
+                        type="checkbox" 
+                        checked={attendanceFilters.Absent}
+                        onChange={() => handleFilterChange('Absent')}
+                        className="rounded text-amber-500 focus:ring-amber-500" 
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Absent ({summary.absent})</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded">
-                      <input type="checkbox" className="rounded text-amber-500 focus:ring-amber-500" />
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Late</span>
+                      <input 
+                        type="checkbox" 
+                        checked={attendanceFilters.Late}
+                        onChange={() => handleFilterChange('Late')}
+                        className="rounded text-amber-500 focus:ring-amber-500" 
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Late ({summary.late})</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-2 rounded">
+                      <input 
+                        type="checkbox" 
+                        checked={attendanceFilters.Excused}
+                        onChange={() => handleFilterChange('Excused')}
+                        className="rounded text-amber-500 focus:ring-amber-500" 
+                      />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Excused ({summary.excused})</span>
                     </label>
                   </div>
                 </div>
@@ -176,9 +314,9 @@ const AttendancePage = () => {
         </div>
 
         {/* Student List Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg mb-6">
           {/* Table Header */}
-          <div className="bg-amber-300 dark:bg-amber-400 px-6 py-4 grid grid-cols-12 gap-4 items-center">
+          <div className="bg-amber-300 dark:bg-amber-400 px-6 py-4 grid grid-cols-12 gap-4 items-center rounded-t-2xl">
             <div className="col-span-3 font-semibold text-gray-800">
               Last Name
             </div>
@@ -194,6 +332,7 @@ const AttendancePage = () => {
           </div>
 
           {/* Table Body */}
+          <div className="overflow-visible">
           {loading ? (
             <div className="py-12 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
@@ -238,12 +377,52 @@ const AttendancePage = () => {
                 <div className="col-span-3 text-gray-700 dark:text-gray-300">
                   {student.middleName}
                 </div>
-                <div className="col-span-3 text-gray-700 dark:text-gray-300">
-                  {student.status}
+                <div className="col-span-3 relative">
+                  <button
+                    onClick={() => toggleDropdown(student.id)}
+                    disabled={updatingAttendance}
+                    className={`w-full px-3 py-2 rounded-lg font-medium text-sm flex items-center justify-between transition-colors ${
+                      getStatusColor(student.status || 'Absent')
+                    } hover:opacity-80 disabled:opacity-50`}
+                  >
+                    <span>{student.status || 'Absent'}</span>
+                    <ChevronDown className="w-4 h-4" />
+                  </button>
+                  
+                  {/* Dropdown Menu */}
+                  {openDropdownId === student.id && (
+                    <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-20">
+                      <button
+                        onClick={() => handleStatusChange(student.id, 'Present')}
+                        className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 dark:hover:bg-green-900 transition-colors"
+                      >
+                        Present
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(student.id, 'Absent')}
+                        className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 dark:hover:bg-red-900 transition-colors"
+                      >
+                        Absent
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(student.id, 'Late')}
+                        className="w-full text-left px-4 py-2 text-sm text-yellow-700 hover:bg-yellow-50 dark:hover:bg-yellow-900 transition-colors"
+                      >
+                        Late
+                      </button>
+                      <button
+                        onClick={() => handleStatusChange(student.id, 'Excused')}
+                        className="w-full text-left px-4 py-2 text-sm text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900 transition-colors"
+                      >
+                        Excused
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))
           )}
+          </div>
         </div>
 
         {/* Attendance Report Button */}

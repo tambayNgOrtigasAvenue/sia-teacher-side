@@ -35,12 +35,13 @@ try {
     
     // Validate required fields
     if (!isset($data->studentProfileId) || !isset($data->sectionId) || 
-        !isset($data->quarter) || !isset($data->gradeValue)) {
-        throw new Exception('Missing required fields: studentProfileId, sectionId, quarter, gradeValue');
+        !isset($data->quarter) || !isset($data->gradeValue) || !isset($data->subjectId)) {
+        throw new Exception('Missing required fields: studentProfileId, sectionId, quarter, gradeValue, subjectId');
     }
     
     $studentProfileId = (int)$data->studentProfileId;
     $sectionId = (int)$data->sectionId;
+    $subjectId = (int)$data->subjectId;
     $quarter = $data->quarter; // q1, q2, q3, q4
     $gradeValue = (float)$data->gradeValue;
     $remarks = isset($data->remarks) ? trim($data->remarks) : null;
@@ -87,10 +88,24 @@ try {
     
     $enrollmentId = $enrollment['EnrollmentID'];
     
-    // Step 2: Get the section's subject (for adviser, it's typically a general subject or homeroom)
-    // For now, we'll use a default SubjectID = 1 or create a "General/Homeroom" subject
-    // You may need to adjust this based on your subject structure
-    $subjectId = 1; // Default to subject ID 1, adjust as needed
+    // Step 2: Verify subject exists and belongs to the correct grade level
+    $subjectVerifyQuery = "
+        SELECT s.SubjectID, s.SubjectName
+        FROM subject s
+        JOIN section sec ON s.GradeLevelID = sec.GradeLevelID
+        WHERE s.SubjectID = :subjectId
+        AND sec.SectionID = :sectionId
+        AND s.IsActive = 1
+    ";
+    
+    $subjectStmt = $db->prepare($subjectVerifyQuery);
+    $subjectStmt->bindParam(':subjectId', $subjectId, PDO::PARAM_INT);
+    $subjectStmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
+    $subjectStmt->execute();
+    
+    if ($subjectStmt->rowCount() === 0) {
+        throw new Exception('Invalid subject for this grade level');
+    }
     
     // Step 3: Check if grade already exists for this enrollment, subject, and quarter
     $checkQuery = "
@@ -129,7 +144,7 @@ try {
         $gradeId = $existingGrade['GradeID'];
         $action = 'updated';
     } else {
-        // Insert new grade (without GradeStatusID since it causes foreign key constraint)
+        // Insert new grade
         $insertQuery = "
             INSERT INTO grade (
                 EnrollmentID,

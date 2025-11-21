@@ -67,7 +67,7 @@ try {
             gl.LevelName as grade,
             sec.SectionID,
             sec.SectionName as sectionName,
-            COALESCE(cs.RoomNumber, cs.RoomNumber, 'TBD') as room,
+            COALESCE(sec.RoomNumber, 'TBD') as room,
             CASE 
                 WHEN cs.ScheduleStatusID IS NOT NULL THEN ss.StatusName
                 ELSE 'Pending'
