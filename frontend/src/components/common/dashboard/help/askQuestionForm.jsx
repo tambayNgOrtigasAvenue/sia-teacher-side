@@ -44,9 +44,9 @@ export default function AskQuestionForm({ onSubmit }) {
   };
 
   return (
-    <div className="bg-amber-50 p-6 rounded-2xl">
+    <div className="bg-amber-50 dark:bg-gray-700 p-6 rounded-2xl">
       {/* Section Header */}
-      <h2 className="text-2xl font-semibold mb-4 text-gray-900">
+      <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">
         Ask Question
       </h2>
 
@@ -59,7 +59,7 @@ export default function AskQuestionForm({ onSubmit }) {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Enter your full name"
-            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
           />
         </div>
 
@@ -70,7 +70,7 @@ export default function AskQuestionForm({ onSubmit }) {
             value={employeeId}
             onChange={(e) => setEmployeeId(e.target.value)}
             placeholder="Employee ID"
-            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
           />
         </div>
 
@@ -81,7 +81,7 @@ export default function AskQuestionForm({ onSubmit }) {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description..."
             rows="6"
-            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all resize-none bg-white"
+            className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all resize-none"
           />
         </div>
 

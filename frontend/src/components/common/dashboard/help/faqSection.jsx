@@ -54,7 +54,7 @@ export default function FaqSection() {
   return (
     <div>
       {/* Section Header */}
-      <h2 className="text-2xl font-semibold mb-4 text-gray-900">FAQ</h2>
+      <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-white">FAQ</h2>
 
       {/* FAQ Items List */}
       <div className="space-y-4">

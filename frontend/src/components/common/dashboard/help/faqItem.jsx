@@ -15,11 +15,11 @@ import { ChevronDown } from '../../../icons/icons.jsx';
  */
 export default function FaqItem({ question, answer, IconComponent, isOpen, onToggle }) {
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden transition-all">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden transition-all">
       {/* Accordion Header (Clickable) */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors text-left"
+        className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-left"
       >
         {/* Icon */}
         <div className="flex-shrink-0">
@@ -27,13 +27,13 @@ export default function FaqItem({ question, answer, IconComponent, isOpen, onTog
         </div>
 
         {/* Question Text */}
-        <span className="flex-1 font-medium text-gray-900">
+        <span className="flex-1 font-medium text-gray-900 dark:text-white">
           {question}
         </span>
 
         {/* Chevron Icon (Rotates when open) */}
         <ChevronDown 
-          className={`w-5 h-5 text-gray-500 transform transition-transform duration-200 ${
+          className={`w-5 h-5 text-gray-500 dark:text-gray-400 transform transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -41,7 +41,7 @@ export default function FaqItem({ question, answer, IconComponent, isOpen, onTog
 
       {/* Accordion Content (Answer) */}
       {isOpen && (
-        <div className="p-4 pt-0 text-gray-600 text-sm leading-relaxed">
+        <div className="p-4 pt-0 text-gray-600 dark:text-gray-300 text-sm leading-relaxed">
           {answer}
         </div>
       )}
