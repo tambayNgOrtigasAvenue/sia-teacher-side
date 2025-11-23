@@ -68,19 +68,34 @@ try {
     $teacherProfileId = (int)$teacher['TeacherProfileID'];
     
     // Get the ClassScheduleID for this student and teacher
-    // For now, we'll use a default ClassScheduleID = 1 or get the first available schedule
-    // In a production system, this should be passed from the frontend
+    // First, get the student's section
+    $sectionQuery = "
+        SELECT e.SectionID
+        FROM enrollment e
+        WHERE e.StudentProfileID = :studentId
+        LIMIT 1
+    ";
+    $stmt = $db->prepare($sectionQuery);
+    $stmt->bindParam(':studentId', $studentId, PDO::PARAM_INT);
+    $stmt->execute();
+    $enrollment = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$enrollment) {
+        throw new Exception('Student enrollment not found');
+    }
+    
+    $sectionId = (int)$enrollment['SectionID'];
+    
+    // Now get the schedule for this section and teacher
     $scheduleQuery = "
         SELECT cs.ScheduleID 
         FROM classschedule cs
-        JOIN section s ON cs.SectionID = s.SectionID
-        JOIN enrollment e ON e.SectionID = s.SectionID
-        WHERE e.StudentProfileID = :studentId
+        WHERE cs.SectionID = :sectionId
         AND cs.TeacherProfileID = :teacherId
         LIMIT 1
     ";
     $stmt = $db->prepare($scheduleQuery);
-    $stmt->bindParam(':studentId', $studentId, PDO::PARAM_INT);
+    $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
     $stmt->bindParam(':teacherId', $teacherProfileId, PDO::PARAM_INT);
     $stmt->execute();
     $schedule = $stmt->fetch(PDO::FETCH_ASSOC);

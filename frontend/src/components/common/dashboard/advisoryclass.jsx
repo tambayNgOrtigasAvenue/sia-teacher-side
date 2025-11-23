@@ -107,7 +107,7 @@ const AdvisoryClass = () => {
                   </td>
                   <td className="whitespace-nowrap py-4 px-6 text-right text-sm">
                     <button
-                      onClick={() => navigate('/teacher-dashboard/my-classes')}
+                      onClick={() => navigate('/teacher-dashboard/my-classes/')}
                       className="font-medium text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 transition-colors"
                     >
                       View Class Details &gt;

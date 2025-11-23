@@ -171,16 +171,16 @@ export default function InputGradeModal({
       {/* Modal Content */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div 
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-sm max-h-[85vh] overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Modal Header */}
-          <div className="bg-gray-800 text-white px-6 py-4">
-            <h2 className="text-2xl font-bold">Input Grade</h2>
+          <div className="bg-gray-800 text-white px-5 py-3">
+            <h2 className="text-xl font-bold">Input Grade</h2>
           </div>
 
           {/* Modal Body */}
-          <div className="p-6 space-y-5">
+          <div className="p-5 space-y-4 overflow-y-auto">
             {/* Student Name */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -276,7 +276,7 @@ export default function InputGradeModal({
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 placeholder="Enter remarks (optional)"
-                rows="3"
+                rows="2"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none transition-all resize-none"
               />
             </div>
@@ -296,7 +296,7 @@ export default function InputGradeModal({
           </div>
 
           {/* Modal Footer */}
-          <div className="bg-gray-50 px-6 py-4 flex justify-end gap-3">
+          <div className="bg-gray-50 px-5 py-3 flex justify-end gap-3">
             {/* Cancel Button */}
             <button
               onClick={handleClose}

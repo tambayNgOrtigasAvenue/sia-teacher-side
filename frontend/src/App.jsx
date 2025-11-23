@@ -15,6 +15,7 @@ import LoginPage from './components/pages/loginPage';
 import RegisterTeacher from './components/common/homepage/registerTeacher';
 import AttendancePage from './pages/AttendancePage';
 import AttendanceReportPage from './pages/AttendanceReportPage';
+import EmergencyDismissalPage from './pages/EmergencyDismissalPage';
 
 /** 
  * ProtectedRoute Component
@@ -68,6 +69,7 @@ function App() {
               <Route path="attendance" element={<AttendancePage />} />
               <Route path="attendance-report" element={<AttendanceReportPage />} />
               <Route path="teaching-schedule" element={<TeachingSchedulePage />} />
+              <Route path="emergency-dismissal" element={<EmergencyDismissalPage />} />
               <Route path="notifications" element={<NotificationPage />} />
               <Route path="announcements" element={<AnnouncementContainer />} />
               <Route path="settings" element={<SettingsPage />} />

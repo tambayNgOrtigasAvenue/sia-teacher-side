@@ -1,10 +1,4 @@
 <?php
-/**
- * API Endpoint: Get Teacher Classes
- * Method: GET
- * Returns all classes/sections assigned to the logged-in teacher
- */
-
 session_start();
 
 ini_set('display_errors', 1);

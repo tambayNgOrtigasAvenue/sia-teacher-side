@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Breadcrumb from '../common/Breadcrumb';
 import MySchedule from '../schedules/MySchedule';
 import TeacherSchedules from '../schedules/TeacherSchedules';
@@ -13,6 +14,7 @@ import { canManageAllSchedules } from '../../utils/permissions';
 
 const TeachingSchedulePage = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const userCanManageAllSchedules = canManageAllSchedules(user);
   
   const [activeTab, setActiveTab] = useState('my-schedule');
@@ -204,19 +206,39 @@ const TeachingSchedulePage = () => {
     // toast.success('Favorite updated');
   };
 
-  // Handle section click to create/edit schedule
-  const handleSectionClick = (grade, section) => {
-    // Set the selected section for the create schedule modal
-    setSelectedSection(section);
-    setCreateFormData({
-      teacher: user?.teacherProfileId || '',
-      gradeSection: section.id,
-      sectionName: section.name,
-      gradeName: grade.grade,
-      day: 'Monday to Friday',
-      schedule: []
-    });
-    setIsCreateModalOpen(true);
+  // Handle section click to create/edit schedule or navigate to emergency dismissal
+  const handleSectionClick = (grade, section, action = 'schedule') => {
+    if (action === 'emergency') {
+      // Navigate to emergency dismissal page
+      navigate('/teacher-dashboard/emergency-dismissal', {
+        state: {
+          schedule: {
+            scheduleId: section.id,
+            sectionId: section.id,
+            gradeLevel: grade.grade.replace('GRADE ', ''),
+            section: section.name.replace('Section ', ''),
+            subject: 'All Classes',
+            teacher: user?.firstName + ' ' + user?.lastName,
+            day: 'Monday',
+            startTime: '8:00 AM',
+            endTime: '5:00 PM',
+            room: section.room
+          }
+        }
+      });
+    } else {
+      // Set the selected section for the create schedule modal
+      setSelectedSection(section);
+      setCreateFormData({
+        teacher: user?.teacherProfileId || '',
+        gradeSection: section.id,
+        sectionName: section.name,
+        gradeName: grade.grade,
+        day: 'Monday to Friday',
+        schedule: []
+      });
+      setIsCreateModalOpen(true);
+    }
   };
 
   const breadcrumbItems = [
