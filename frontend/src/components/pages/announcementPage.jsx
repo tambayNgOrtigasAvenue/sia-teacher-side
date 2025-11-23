@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import SearchBarWithFilter from '../common/dashboard/my-classes/searchBarWithFilter.jsx';
+import SearchBar from '../common/SearchBar.jsx';
 import AnnouncementCard from '../cards/announcementCard.jsx';
 
 /**
@@ -43,14 +43,14 @@ export default function AnnouncementPage({ announcements }) {
       </div>
 
       {/* Search Bar */}
-      <div className="px-8 mb-6">
-        <SearchBarWithFilter
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-          filterOption="All"
-          onFilterChange={() => {}}
-          filterType="announcements"
-        />
+      <div className="px-8 mb-6 max-w-2xl mx-auto">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
+          <SearchBar
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
+            placeholder="Search announcements..."
+          />
+        </div>
       </div>
 
       {/* Announcements Grid */}
