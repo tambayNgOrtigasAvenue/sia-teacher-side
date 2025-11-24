@@ -13,7 +13,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       // Only check auth if there's a token present
       const hasToken = localStorage.getItem('authToken') || sessionStorage.getItem('teacherSession');
-      
+
       if (!hasToken) {
         setLoading(false);
         return;
@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }) => {
           API_ENDPOINTS.GET_CURRENT_USER,
           { withCredentials: true }
         );
-        
+
         if (response.data.success) {
           setUser(response.data.user);
         } else {
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     };
-    
+
     checkAuth();
   }, []);
 
@@ -62,10 +62,10 @@ export const AuthProvider = ({ children }) => {
 
       if (response.data.success) {
         setUser(response.data.user);
-        return { 
-          success: true, 
+        return {
+          success: true,
           user: response.data.user,
-          token: response.data.token 
+          token: response.data.token
         };
       } else {
         throw new Error(response.data.message || 'Login failed');
@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }) => {
         API_ENDPOINTS.GET_CURRENT_USER,
         { withCredentials: true }
       );
-      
+
       if (response.data.success) {
         setUser(response.data.user);
         return response.data.user;
