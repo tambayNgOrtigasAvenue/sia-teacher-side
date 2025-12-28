@@ -59,6 +59,23 @@ try {
         }
     }
     
+    // Get active school year
+    $schoolYearQuery = "SELECT SchoolYearID FROM schoolyear WHERE IsActive = 1 LIMIT 1";
+    $schoolYearStmt = $db->prepare($schoolYearQuery);
+    $schoolYearStmt->execute();
+    $activeSchoolYear = $schoolYearStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$activeSchoolYear) {
+        http_response_code(404);
+        echo json_encode([
+            'success' => false,
+            'message' => 'No active school year found.'
+        ]);
+        exit();
+    }
+    
+    $activeSchoolYearId = $activeSchoolYear['SchoolYearID'];
+    
     $query = "
         SELECT 
             gl.GradeLevelID,
@@ -70,19 +87,25 @@ try {
             COALESCE(COUNT(DISTINCT e.EnrollmentID), 0) as studentCount,
             (sec.MaxCapacity - COALESCE(sec.CurrentEnrollment, 0)) as availableSlots,
             CASE 
+                WHEN sec.MaxCapacity IS NULL THEN 'Available'
                 WHEN COALESCE(sec.CurrentEnrollment, 0) >= sec.MaxCapacity THEN 'Full'
                 WHEN COALESCE(sec.CurrentEnrollment, 0) >= sec.MaxCapacity * 0.8 THEN 'Almost Full'
                 ELSE 'Available'
-            END as status
+            END as status,
+            CONCAT(p.FirstName, ' ', p.LastName) as adviserName
         FROM section sec
         JOIN gradelevel gl ON sec.GradeLevelID = gl.GradeLevelID
-        LEFT JOIN enrollment e ON sec.SectionID = e.SectionID
-        " . ($gradeLevelId ? "WHERE gl.GradeLevelID = :gradeLevelId" : "") . "
-        GROUP BY sec.SectionID, gl.GradeLevelID, gl.LevelName, sec.SectionName, sec.MaxCapacity, sec.CurrentEnrollment
+        LEFT JOIN enrollment e ON sec.SectionID = e.SectionID AND e.SchoolYearID = :activeSchoolYearId
+        LEFT JOIN teacherprofile tp ON sec.AdviserTeacherID = tp.TeacherProfileID
+        LEFT JOIN profile p ON tp.ProfileID = p.ProfileID
+        WHERE sec.SchoolYearID = :activeSchoolYearId
+        " . ($gradeLevelId ? "AND gl.GradeLevelID = :gradeLevelId" : "") . "
+        GROUP BY sec.SectionID, gl.GradeLevelID, gl.LevelName, sec.SectionName, sec.MaxCapacity, sec.CurrentEnrollment, p.FirstName, p.LastName
         ORDER BY gl.SortOrder, sec.SectionName
     ";
     
     $stmt = $db->prepare($query);
+    $stmt->bindParam(':activeSchoolYearId', $activeSchoolYearId, PDO::PARAM_INT);
     if ($gradeLevelId) {
         $stmt->bindParam(':gradeLevelId', $gradeLevelId, PDO::PARAM_INT);
     }
@@ -109,7 +132,8 @@ try {
             'maxCapacity' => $row['MaxCapacity'],
             'studentCount' => (int)$row['studentCount'],
             'availableSlots' => (int)$row['availableSlots'],
-            'status' => $row['status']
+            'status' => $row['status'],
+            'adviserName' => $row['adviserName']
         ];
     }
     

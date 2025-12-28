@@ -60,23 +60,27 @@ try {
     }
     
     // Get teacher's sections grouped by grade
-    // This includes both sections with schedules AND sections assigned as adviser
+    // This includes sections assigned as adviser
+    // Status is based on whether the section has any class schedules
     $query = "
         SELECT DISTINCT
             gl.GradeLevelID,
             gl.LevelName as grade,
             sec.SectionID,
             sec.SectionName as sectionName,
-            COALESCE(sec.RoomNumber, 'TBD') as room,
+            COALESCE(cs.RoomNumber, 'TBD') as room,
             CASE 
-                WHEN cs.ScheduleStatusID IS NOT NULL THEN ss.StatusName
+                WHEN COUNT(cs.ScheduleID) > 0 THEN 'Approved'
                 ELSE 'Pending'
-            END as status
+            END as status,
+            CONCAT(p.FirstName, ' ', p.LastName) as adviserName
         FROM section sec
         JOIN gradelevel gl ON sec.GradeLevelID = gl.GradeLevelID
-        LEFT JOIN classschedule cs ON cs.SectionID = sec.SectionID AND cs.TeacherProfileID = :teacherProfileId
-        LEFT JOIN schedulestatus ss ON cs.ScheduleStatusID = ss.StatusID
+        LEFT JOIN classschedule cs ON cs.SectionID = sec.SectionID
+        LEFT JOIN teacherprofile tp ON sec.AdviserTeacherID = tp.TeacherProfileID
+        LEFT JOIN profile p ON tp.ProfileID = p.ProfileID
         WHERE sec.AdviserTeacherID = :teacherProfileId
+        GROUP BY gl.GradeLevelID, gl.LevelName, sec.SectionID, sec.SectionName, p.FirstName, p.LastName
         ORDER BY gl.LevelName, sec.SectionName
     ";
     
@@ -100,7 +104,7 @@ try {
             $schedules[] = [
                 'id' => $gradeLevelId,
                 'grade' => 'GRADE ' . $row['grade'],
-                'adviser' => 'N/A', // TODO: Get actual adviser if available
+                'adviser' => $row['adviserName'] ?? 'N/A',
                 'sections' => []
             ];
         }

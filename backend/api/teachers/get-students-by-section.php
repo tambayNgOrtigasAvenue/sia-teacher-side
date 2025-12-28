@@ -2,8 +2,13 @@
 /**
  * API Endpoint: Get Students by Section
  * Method: GET
- * Returns all students in a specific section
+ * Returns all students in a specific section with today's attendance status
  * Query Parameters: sectionId
+ * 
+ * Attendance Logic:
+ * - If student has attendance record for today: Show status (Present, Absent, Late, Excused)
+ * - If no record for today: Show "Unmarked"
+ * - Past days without record are automatically considered "Absent"
  */
 
 session_start();
@@ -38,6 +43,7 @@ if (!isset($_GET['sectionId'])) {
 }
 
 $sectionId = $_GET['sectionId'];
+$today = date('Y-m-d');
 
 // Get database connection
 $database = new Database();
@@ -50,30 +56,47 @@ if (!$db) {
 }
 
 try {
-    // Get students in the section with their attendance status
-    // Students are linked to sections through the enrollment table
+    // Get SchoolYearID for the section
+    $sectionQuery = "SELECT SchoolYearID FROM section WHERE SectionID = :sectionId";
+    $sectionStmt = $db->prepare($sectionQuery);
+    $sectionStmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
+    $sectionStmt->execute();
+    $schoolYearId = $sectionStmt->fetchColumn();
+
+    // Get students in the section with their attendance status for today
+    // Uses LEFT JOIN to include students without attendance records
+    // Filter by SchoolYearID to ensure we only look at current year enrollments
     $studentQuery = "
         SELECT 
             sp.StudentProfileID as id,
             p.LastName as lastName,
             p.FirstName as firstName,
             p.MiddleName as middleName,
+            sp.Gender as gender,
             sp.DateOfBirth as birthdate,
             TIMESTAMPDIFF(YEAR, sp.DateOfBirth, CURDATE()) as age,
             sp.StudentNumber as studentNumber,
-            CAST(p.EncryptedAddress AS CHAR) as address,
-            CAST(p.EncryptedPhoneNumber AS CHAR) as contactNumber,
+            CAST(AES_DECRYPT(p.EncryptedAddress, 'encryption_key') AS CHAR) as address,
+            CAST(AES_DECRYPT(p.EncryptedPhoneNumber, 'encryption_key') AS CHAR) as contactNumber,
             p.ProfilePictureURL as profilePicture,
-            'Present' as attendance,
+            CASE 
+                WHEN a.AttendanceStatus IS NOT NULL THEN a.AttendanceStatus
+                ELSE 'Unmarked'
+            END as attendance,
+            a.AttendanceDate as attendanceDate,
             NULL as grade
         FROM studentprofile sp
         JOIN profile p ON sp.ProfileID = p.ProfileID
         JOIN enrollment e ON sp.StudentProfileID = e.StudentProfileID
+        LEFT JOIN attendance a ON sp.StudentProfileID = a.StudentProfileID 
+            AND DATE(a.AttendanceDate) = :today
         WHERE e.SectionID = :sectionId
+        AND e.SchoolYearID = :schoolYearId
         AND e.EnrollmentID IN (
             SELECT MAX(EnrollmentID) 
             FROM enrollment 
             WHERE StudentProfileID = sp.StudentProfileID
+            AND SchoolYearID = :schoolYearId
             GROUP BY StudentProfileID
         )
         ORDER BY p.LastName, p.FirstName
@@ -81,6 +104,8 @@ try {
     
     $stmt = $db->prepare($studentQuery);
     $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
+    $stmt->bindParam(':schoolYearId', $schoolYearId, PDO::PARAM_INT);
+    $stmt->bindParam(':today', $today, PDO::PARAM_STR);
     $stmt->execute();
     
     $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -88,7 +113,8 @@ try {
     http_response_code(200);
     echo json_encode([
         'success' => true,
-        'data' => $students
+        'data' => $students,
+        'date' => $today
     ]);
     
 } catch (Exception $e) {

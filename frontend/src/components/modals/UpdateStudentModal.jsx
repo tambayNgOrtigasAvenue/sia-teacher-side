@@ -27,6 +27,52 @@ export default function UpdateStudentModal({ studentData, onInputChange, onSave,
 
         {/* Form */}
         <div className="p-6 space-y-6">
+          {/* Profile Picture Upload */}
+          <div className="flex flex-col items-center justify-center mb-6">
+            <div className="relative group">
+              <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gray-100">
+                {studentData.profilePictureFile ? (
+                  <img 
+                    src={URL.createObjectURL(studentData.profilePictureFile)} 
+                    alt="Profile Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : studentData.profilePicture ? (
+                  <img 
+                    src={studentData.profilePicture} 
+                    alt="Profile" 
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-4xl font-bold bg-amber-100">
+                    {studentData.firstName?.charAt(0)}{studentData.lastName?.charAt(0)}
+                  </div>
+                )}
+              </div>
+              <label 
+                htmlFor="profile-upload" 
+                className="absolute bottom-0 right-0 bg-amber-400 hover:bg-amber-500 text-white p-2 rounded-full shadow-md cursor-pointer transition-colors"
+                title="Change Profile Picture"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+                <input 
+                  id="profile-upload" 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      onInputChange('profilePictureFile', e.target.files[0]);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">Click pencil icon to change photo</p>
+          </div>
+
           {/* Row 1: Name Fields */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -67,8 +113,8 @@ export default function UpdateStudentModal({ studentData, onInputChange, onSave,
             </div>
           </div>
 
-          {/* Row 2: Birthday, Age, Student Number */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Row 2: Birthday, Gender, Age, Student Number */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Birthday
@@ -76,9 +122,40 @@ export default function UpdateStudentModal({ studentData, onInputChange, onSave,
               <input
                 type="date"
                 value={studentData.birthdate}
-                onChange={(e) => onInputChange('birthdate', e.target.value)}
+                onChange={(e) => {
+                  const newBirthdate = e.target.value;
+                  onInputChange('birthdate', newBirthdate);
+
+                  // Calculate age
+                  if (newBirthdate) {
+                    const today = new Date();
+                    const birthDate = new Date(newBirthdate);
+                    let age = today.getFullYear() - birthDate.getFullYear();
+                    const m = today.getMonth() - birthDate.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                      age--;
+                    }
+                    onInputChange('age', age);
+                  } else {
+                    onInputChange('age', '');
+                  }
+                }}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                Gender
+              </label>
+              <select
+                value={studentData.gender}
+                onChange={(e) => onInputChange('gender', e.target.value)}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-all"
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">

@@ -34,7 +34,7 @@ $user = new User($db);
 // Check user type and fetch appropriate data
 $userType = $_SESSION['user_type'] ?? null;
 
-if ($userType === 'Teacher') {
+if ($userType === 'Teacher' || $userType === 'Head Teacher') {
     // Fetch teacher data
     $userData = $user->getTeacherByUserId($_SESSION['user_id']);
     

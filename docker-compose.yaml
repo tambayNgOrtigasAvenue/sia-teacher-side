@@ -1,0 +1,78 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gca_teacher_backend_20251222
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_HOST=mysql
+      - DB_DATABASE=db_gca_20251214
+      - DB_USERNAME=root
+      - DB_PASSWORD=secret
+    ports:
+      - "8000:80"
+    depends_on:
+      - mysql
+    networks:
+      - gca-teacher-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: db_gca_20251214
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - gca-teacher-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    networks:
+      - gca-teacher-network
+  
+  # ------------------------------------
+  # FRONTEND (React)
+  # ------------------------------------
+  frontend:
+    build:
+      context: ./frontend   # Fixed: Capital 'F'
+      dockerfile: Dockerfile
+    container_name: gca_teacher_frontend_20251222
+    restart: unless-stopped
+    # FIXED: Node uses /app, not nginx html
+    working_dir: /app
+    volumes:
+      - ./frontend:/app      # Fixed: Capital 'F' and mapped to /app
+      - /app/node_modules    # Added: Keeps node_modules separate so it doesn't get overwritten
+    ports:
+      - "3000:3000"          # FIXED: React runs on 3000
+    networks:
+      - gca-teacher-network
+    stdin_open: true         # Added: Needed for React interactive mode
+
+networks:
+  gca-teacher-network:
+    driver: bridge
+
+volumes:
+  mysql-data:

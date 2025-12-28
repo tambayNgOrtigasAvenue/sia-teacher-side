@@ -17,8 +17,8 @@ export default function AnnouncementCard({ announcement }) {
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300">
       {/* Announcement Image */}
       <div className="relative">
-        <img 
-          src={announcement.imageUrl} 
+        <img
+          src={announcement.imageUrl}
           alt={announcement.title}
           className="w-full h-48 object-cover"
         />
@@ -43,7 +43,7 @@ export default function AnnouncementCard({ announcement }) {
         {/* Action Buttons */}
         <div className="flex gap-2 mt-auto">
           {/* Read More Button */}
-          <button 
+          <button
             className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-medium py-2 px-4 rounded-full text-sm transition-colors"
             onClick={() => {
               // TODO: Implement read more functionality (show full announcement)
@@ -54,14 +54,16 @@ export default function AnnouncementCard({ announcement }) {
           </button>
 
           {/* View on Facebook Button */}
-          <a 
-            href={announcement.facebookUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex-1 bg-amber-400 hover:bg-amber-500 text-white font-medium py-2 px-4 rounded-full text-sm transition-colors text-center"
-          >
-            View on Facebook
-          </a>
+          {announcement.facebookUrl && (
+            <a
+              href={announcement.facebookUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 bg-amber-400 hover:bg-amber-500 text-white font-medium py-2 px-4 rounded-full text-sm transition-colors text-center"
+            >
+              View on Facebook
+            </a>
+          )}
         </div>
       </div>
     </div>

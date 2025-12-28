@@ -67,24 +67,28 @@ try {
     
     $teacherProfileId = (int)$teacher['TeacherProfileID'];
     
-    // Get the ClassScheduleID for this student and teacher
-    // First, get the student's section
-    $sectionQuery = "
-        SELECT e.SectionID
-        FROM enrollment e
-        WHERE e.StudentProfileID = :studentId
+    // Get section ID from input
+    if (!isset($input['sectionId'])) {
+        throw new Exception('Section ID is required');
+    }
+    $sectionId = (int)$input['sectionId'];
+
+    // Verify student is enrolled in this section
+    $enrollmentQuery = "
+        SELECT EnrollmentID
+        FROM enrollment
+        WHERE StudentProfileID = :studentId
+        AND SectionID = :sectionId
         LIMIT 1
     ";
-    $stmt = $db->prepare($sectionQuery);
+    $stmt = $db->prepare($enrollmentQuery);
     $stmt->bindParam(':studentId', $studentId, PDO::PARAM_INT);
+    $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
     $stmt->execute();
-    $enrollment = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$enrollment) {
-        throw new Exception('Student enrollment not found');
+    if (!$stmt->fetch()) {
+        throw new Exception('Student is not enrolled in this section');
     }
-    
-    $sectionId = (int)$enrollment['SectionID'];
     
     // Now get the schedule for this section and teacher
     $scheduleQuery = "
@@ -100,18 +104,50 @@ try {
     $stmt->execute();
     $schedule = $stmt->fetch(PDO::FETCH_ASSOC);
     
-    // If no schedule found, use default value of 1
-    $classScheduleId = $schedule ? (int)$schedule['ScheduleID'] : 1;
+    // If no schedule found for this teacher, try to get any schedule for this section
+    if (!$schedule) {
+        $fallbackQuery = "
+            SELECT cs.ScheduleID 
+            FROM classschedule cs
+            WHERE cs.SectionID = :sectionId
+            LIMIT 1
+        ";
+        $stmt = $db->prepare($fallbackQuery);
+        $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
+        $stmt->execute();
+        $schedule = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    // If still no schedule found, create a default one for this section
+    if (!$schedule) {
+        // Create a default schedule entry for this section
+        $createScheduleQuery = "
+            INSERT INTO classschedule 
+            (SectionID, SubjectID, TeacherProfileID, DayOfWeek, StartTime, EndTime, RoomNumber)
+            VALUES 
+            (:sectionId, 1, :teacherId, 'Monday', '08:00:00', '09:00:00', 'TBA')
+        ";
+        $stmt = $db->prepare($createScheduleQuery);
+        $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
+        $stmt->bindParam(':teacherId', $teacherProfileId, PDO::PARAM_INT);
+        $stmt->execute();
+        
+        $classScheduleId = (int)$db->lastInsertId();
+    } else {
+        $classScheduleId = (int)$schedule['ScheduleID'];
+    }
     
     // Check if attendance record already exists
     $checkQuery = "
         SELECT AttendanceID 
         FROM attendance 
         WHERE StudentProfileID = :studentId 
+        AND ClassScheduleID = :classScheduleId
         AND DATE(AttendanceDate) = :attendanceDate
     ";
     $stmt = $db->prepare($checkQuery);
     $stmt->bindParam(':studentId', $studentId, PDO::PARAM_INT);
+    $stmt->bindParam(':classScheduleId', $classScheduleId, PDO::PARAM_INT);
     $stmt->bindParam(':attendanceDate', $attendanceDate, PDO::PARAM_STR);
     $stmt->execute();
     $existing = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -157,10 +193,23 @@ try {
     ]);
     
 } catch (Exception $e) {
+    error_log("Attendance update error: " . $e->getMessage());
+    error_log("Stack trace: " . $e->getTraceAsString());
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
+        'debug' => [
+            'file' => $e->getFile(),
+            'line' => $e->getLine()
+        ]
+    ]);
+} catch (PDOException $e) {
+    error_log("Database error in attendance update: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database error: ' . $e->getMessage()
     ]);
 }
 ?>

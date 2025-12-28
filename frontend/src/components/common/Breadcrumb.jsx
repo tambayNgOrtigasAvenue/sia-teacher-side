@@ -14,13 +14,19 @@ const Breadcrumb = ({ items = [] }) => {
             >
               {item.label}
             </Link>
+          ) : item.onClick ? (
+            <button
+              onClick={item.onClick}
+              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors focus:outline-none"
+            >
+              {item.label}
+            </button>
           ) : (
             <span
-              className={`text-sm ${
-                index === items.length - 1
+              className={`text-sm ${index === items.length - 1
                   ? 'text-gray-900 dark:text-white font-medium'
                   : 'text-gray-500 dark:text-gray-400'
-              }`}
+                }`}
             >
               {item.label}
             </span>

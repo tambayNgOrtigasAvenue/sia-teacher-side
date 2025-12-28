@@ -1,4 +1,6 @@
 <?php
+//Change it to sms, will do later.
+
 session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/cors.php';
@@ -51,8 +53,9 @@ try {
     
     // Get teacher information
     $teacherQuery = "
-        SELECT p.FirstName, p.LastName, p.Email
+        SELECT p.FirstName, p.LastName, u.EmailAddress as Email
         FROM profile p
+        JOIN user u ON p.UserID = u.UserID
         WHERE p.UserID = :userId
     ";
     $stmt = $db->prepare($teacherQuery);
@@ -71,38 +74,55 @@ try {
     $parentNames = [];
     
     if ($recipientType === 'all') {
-        // Get all parents of students in this section
+        // Get all parents/guardians of students in this section
         $parentQuery = "
             SELECT DISTINCT 
-                p.Email,
-                p.FirstName,
-                p.LastName,
-                sp.StudentProfileID
-            FROM studentprofile sp
-            JOIN profile sp_prof ON sp.ProfileID = sp_prof.ProfileID
-            JOIN enrollment e ON sp.StudentProfileID = e.StudentProfileID
-            JOIN profile p ON sp_prof.ParentID = p.ProfileID
+                COALESCE(CAST(AES_DECRYPT(g.EncryptedEmailAddress, 'encryption_key') AS CHAR), CAST(g.EncryptedEmailAddress AS CHAR)) AS Email,
+                g.FullName,
+                g.GuardianID
+            FROM enrollment e
+            JOIN studentprofile sp ON e.StudentProfileID = sp.StudentProfileID
+            JOIN studentguardian sg ON sp.StudentProfileID = sg.StudentProfileID
+            JOIN guardian g ON sg.GuardianID = g.GuardianID
             WHERE e.SectionID = :sectionId
-            AND p.Email IS NOT NULL
-            AND p.Email != ''
+            AND g.EncryptedEmailAddress IS NOT NULL
         ";
         $stmt = $db->prepare($parentQuery);
         $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
+    } elseif ($recipientType === 'student') {
+        // Get all parents/guardians of a specific student
+        if (!isset($input['studentId'])) {
+            throw new Exception('Student ID is required for student recipient');
+        }
+        
+        $studentId = (int)$input['studentId'];
+        
+        $parentQuery = "
+            SELECT DISTINCT 
+                COALESCE(CAST(AES_DECRYPT(g.EncryptedEmailAddress, 'encryption_key') AS CHAR), CAST(g.EncryptedEmailAddress AS CHAR)) AS Email,
+                g.FullName,
+                g.GuardianID
+            FROM studentprofile sp
+            JOIN studentguardian sg ON sp.StudentProfileID = sg.StudentProfileID
+            JOIN guardian g ON sg.GuardianID = g.GuardianID
+            WHERE sp.StudentProfileID = :studentId
+            AND g.EncryptedEmailAddress IS NOT NULL
+        ";
+        $stmt = $db->prepare($parentQuery);
+        $stmt->bindParam(':studentId', $studentId, PDO::PARAM_INT);
     } else {
-        // Get specific parent
+        // Get specific parent/guardian
         if (!$parentId) {
             throw new Exception('Parent ID is required for specific recipient');
         }
         
         $parentQuery = "
             SELECT 
-                p.Email,
-                p.FirstName,
-                p.LastName
-            FROM profile p
-            WHERE p.ProfileID = :parentId
-            AND p.Email IS NOT NULL
-            AND p.Email != ''
+                COALESCE(CAST(AES_DECRYPT(g.EncryptedEmailAddress, 'encryption_key') AS CHAR), CAST(g.EncryptedEmailAddress AS CHAR)) AS Email,
+                g.FullName
+            FROM guardian g
+            WHERE g.GuardianID = :parentId
+            AND g.EncryptedEmailAddress IS NOT NULL
         ";
         $stmt = $db->prepare($parentQuery);
         $stmt->bindParam(':parentId', $parentId, PDO::PARAM_INT);
@@ -117,9 +137,18 @@ try {
     
     foreach ($parents as $parent) {
         $parentEmails[] = $parent['Email'];
-        $parentNames[] = $parent['FirstName'] . ' ' . $parent['LastName'];
+        $parentNames[] = $parent['FullName'];
     }
     
+    // Sanitize output for HTML
+    $safeGradeLevel = htmlspecialchars($gradeLevel);
+    $safeSection = htmlspecialchars($section);
+    $safeSubject = htmlspecialchars($subject);
+    $safeTeacherName = htmlspecialchars($teacherName);
+    $safeOriginalEndTime = htmlspecialchars($originalEndTime);
+    $safeNewDismissalTime = htmlspecialchars($newDismissalTime);
+    $safeMessage = htmlspecialchars($message);
+
     // Create email content
     $emailSubject = "⚠️ Emergency: Class Dismissal Time Change - Grade $gradeLevel Section $section";
     
@@ -159,19 +188,19 @@ try {
                     <h3 style='margin-top: 0; color: #404040;'>Class Information</h3>
                     <div class='info-row'>
                         <span class='info-label'>Grade Level:</span>
-                        <span class='info-value'>Grade $gradeLevel</span>
+                        <span class='info-value'>Grade $safeGradeLevel</span>
                     </div>
                     <div class='info-row'>
                         <span class='info-label'>Section:</span>
-                        <span class='info-value'>$section</span>
+                        <span class='info-value'>$safeSection</span>
                     </div>
                     <div class='info-row'>
                         <span class='info-label'>Subject:</span>
-                        <span class='info-value'>$subject</span>
+                        <span class='info-value'>$safeSubject</span>
                     </div>
                     <div class='info-row' style='border-bottom: none;'>
                         <span class='info-label'>Teacher:</span>
-                        <span class='info-value'>$teacherName</span>
+                        <span class='info-value'>$safeTeacherName</span>
                     </div>
                 </div>
                 
@@ -179,17 +208,17 @@ try {
                     <h3 style='margin-top: 0; color: #28a745;'>⏰ Time Change</h3>
                     <div class='info-row'>
                         <span class='info-label'>Original End Time:</span>
-                        <span class='info-value'>$originalEndTime</span>
+                        <span class='info-value'>$safeOriginalEndTime</span>
                     </div>
                     <div class='info-row' style='border-bottom: none;'>
                         <span class='info-label'>New Dismissal Time:</span>
-                        <span class='info-value' style='color: #d9534f; font-weight: bold; font-size: 18px;'>$newDismissalTime</span>
+                        <span class='info-value' style='color: #d9534f; font-weight: bold; font-size: 18px;'>$safeNewDismissalTime</span>
                     </div>
                 </div>
                 
                 <div class='message-box'>
                     <h3 style='margin-top: 0; color: #404040;'>📝 Teacher's Message</h3>
-                    <p style='white-space: pre-wrap; margin: 0;'>$message</p>
+                    <p style='white-space: pre-wrap; margin: 0;'>$safeMessage</p>
                 </div>
                 
                 <p style='margin-top: 30px; padding: 15px; background-color: #fff; border-radius: 5px; border-left: 4px solid #f4d77d;'>
@@ -231,7 +260,9 @@ try {
         }
     }
     
-    // Log the notification in the database
+    // Log the notification in the database (table doesn't exist yet, skipping for now)
+    // TODO: Create notifications table in database
+    /*
     $logQuery = "
         INSERT INTO notifications 
         (SenderID, RecipientType, SectionID, Title, Message, NotificationDate, Status)
@@ -245,23 +276,34 @@ try {
     $stmt->bindParam(':title', $emailSubject, PDO::PARAM_STR);
     $stmt->bindParam(':message', $message, PDO::PARAM_STR);
     $stmt->execute();
+    */
     
     http_response_code(200);
     echo json_encode([
         'success' => true,
-        'message' => "Notification sent successfully to $successCount parent(s)",
+        'message' => "✅ Notification sent successfully to $successCount parent(s)" . (count($failedEmails) > 0 ? " ($failedEmails failed)" : ""),
         'data' => [
             'totalSent' => $successCount,
             'totalFailed' => count($failedEmails),
-            'failedEmails' => $failedEmails
+            'failedEmails' => $failedEmails,
+            'sentEmails' => $parentEmails,
+            'recipients' => $parentNames,
+            'timestamp' => date('Y-m-d H:i:s')
         ]
     ]);
     
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Database error: ' . $e->getMessage()
+    ]);
 } catch (Exception $e) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
+        'line' => $e->getLine()
     ]);
 }
 ?>

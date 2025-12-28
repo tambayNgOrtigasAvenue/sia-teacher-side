@@ -33,11 +33,12 @@ class Teachers{
         return $stmt;
     }
 
-    public function getTeacherByEmployeeNumber($EmployeeNumber){
+    public function getTeacherByEmployeeNumber($identifier){
         $query = "
             SELECT 
                 u.UserID,
                 tp.EmployeeNumber,
+                u.EmailAddress,
                 pp.PasswordHash,
                 CONCAT(p.FirstName, ' ', p.LastName) AS FullName,
                 u.UserType,
@@ -51,11 +52,12 @@ class Teachers{
             LEFT JOIN 
                 passwordpolicy pp ON u.UserID = pp.UserID
             WHERE 
-                tp.EmployeeNumber = :EmployeeNumber AND u.UserType = 'Teacher'";
+                (tp.EmployeeNumber = :identifier OR u.EmailAddress = :identifier)
+                AND (u.UserType = 'Teacher' OR u.UserType = 'Head Teacher')";
 
         try {
             $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':EmployeeNumber', $EmployeeNumber);
+            $stmt->bindParam(':identifier', $identifier);
             $stmt->execute();
             return $stmt->fetch(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -65,3 +67,4 @@ class Teachers{
         }
     }
 }
+?>

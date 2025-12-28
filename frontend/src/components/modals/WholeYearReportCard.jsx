@@ -14,9 +14,7 @@ import React from 'react';
 export default function WholeYearReportCard({ student, classData, subjects, grades, onClose, onPrint }) {
   const currentYear = new Date().getFullYear();
   const schoolYear = `${currentYear}-${(currentYear + 1).toString().slice(-2)}`;
-  // School year months: June to April (11 months, May is summer break)
-  const months = ['J', 'A', 'S', 'O', 'N', 'D', 'J', 'F', 'M', 'A', 'M'];
-
+  
   // Calculate final grade for each subject (average of all 4 quarters)
   const calculateFinalGrade = (subjectId) => {
     const q1 = parseFloat(grades[subjectId]?.q1) || 0;
@@ -225,50 +223,6 @@ export default function WholeYearReportCard({ student, classData, subjects, grad
               }`}>
                 {getClassStanding()}
               </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Attendance Record */}
-        <div className="px-4 py-3 border-t border-gray-200">
-          <div className="bg-gray-800 text-white text-center py-1.5 mb-2">
-            <p className="text-[10px] font-bold">ATTENDANCE RECORD</p>
-          </div>
-          
-          {/* Attendance Table */}
-          <div className="border border-gray-300">
-            {/* Month Headers */}
-            <div className="grid grid-cols-[120px_repeat(11,1fr)_60px] bg-gray-50">
-              <div className="text-[9px] font-semibold text-gray-700 py-1 px-2 border-r border-gray-300"></div>
-              {months.map((month, idx) => (
-                <div key={idx} className="text-[9px] font-semibold text-gray-700 text-center py-1 border-r border-gray-300">{month}</div>
-              ))}
-              <div className="text-[9px] font-semibold text-gray-700 text-center py-1">TOTAL</div>
-            </div>
-
-            {/* Attendance Rows */}
-            <div className="text-[9px]">
-              <div className="grid grid-cols-[120px_repeat(11,1fr)_60px] border-t border-gray-300">
-                <div className="text-gray-700 font-medium py-1 px-2 border-r border-gray-300">DAYS OF SCHOOL</div>
-                {months.map((_, idx) => (
-                  <div key={idx} className="text-gray-700 text-center py-1 border-r border-gray-300">-</div>
-                ))}
-                <div className="text-gray-700 text-center py-1">-</div>
-              </div>
-              <div className="grid grid-cols-[120px_repeat(11,1fr)_60px] border-t border-gray-300">
-                <div className="text-gray-700 font-medium py-1 px-2 border-r border-gray-300">DAYS PRESENT</div>
-                {months.map((_, idx) => (
-                  <div key={idx} className="text-gray-700 text-center py-1 border-r border-gray-300">-</div>
-                ))}
-                <div className="text-gray-700 text-center py-1">-</div>
-              </div>
-              <div className="grid grid-cols-[120px_repeat(11,1fr)_60px] border-t border-gray-300">
-                <div className="text-gray-700 font-medium py-1 px-2 border-r border-gray-300">DAYS ABSENT</div>
-                {months.map((_, idx) => (
-                  <div key={idx} className="text-gray-700 text-center py-1 border-r border-gray-300">-</div>
-                ))}
-                <div className="text-gray-700 text-center py-1">-</div>
-              </div>
             </div>
           </div>
         </div>

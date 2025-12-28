@@ -15,11 +15,11 @@ const DashboardLayout = () => {
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
       />
-      <div className="flex-1 flex flex-col overflow-hidden bg-[#F9F9F9] dark:bg-slate-900">
+      <div className="flex-1 flex flex-col overflow-hidden bg-[#F9F9F9] dark:bg-slate-900 min-w-0">
         <DashboardHeader
           setMobileOpen={setMobileOpen}
         />
-        <main className='flex-1 overflow-y-auto p-6 bg-[#F9F9F9] dark:bg-slate-900'>
+        <main className='flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 bg-[#F9F9F9] dark:bg-slate-900'>
           <Outlet />
         </main>
       </div>

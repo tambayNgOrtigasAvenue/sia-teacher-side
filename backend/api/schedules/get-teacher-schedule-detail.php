@@ -117,7 +117,8 @@ try {
             'startTime' => date('h:i A', strtotime($schedule['StartTime'])),
             'endTime' => date('h:i A', strtotime($schedule['EndTime'])),
             'subject' => $schedule['SubjectID'],
-            'subjectName' => $schedule['SubjectName']
+            'subjectName' => $schedule['SubjectName'],
+            'day' => $schedule['DayOfWeek']
         ];
     }
     

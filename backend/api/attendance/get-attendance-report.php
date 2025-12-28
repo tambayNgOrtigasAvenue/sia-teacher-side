@@ -1,4 +1,14 @@
 <?php
+/**
+ * API Endpoint: Get Attendance Report
+ * Method: GET
+ * Returns attendance summary for students in a section
+ * 
+ * Query Parameters:
+ * - sectionId (required): The section ID to get attendance for
+ * - quarter (optional): 'First', 'Second', 'Third', 'Fourth' to filter by quarter
+ */
+
 session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/cors.php';
@@ -37,135 +47,89 @@ try {
     
     $sectionId = (int)$_GET['sectionId'];
     
-    // Get quarter parameter (optional - if not provided, show all quarters)
-    $quarter = isset($_GET['quarter']) ? $_GET['quarter'] : null;
+    // Get quarter parameter
+    $quarter = isset($_GET['quarter']) ? $_GET['quarter'] : 'First';
     
-    // Map quarter names to database values
-    $quarterMap = [
-        'First' => 'First Quarter',
-        'Second' => 'Second Quarter',
-        'Third' => 'Third Quarter',
-        'Fourth' => 'Fourth Quarter'
+    // Get current year
+    $currentYear = date('Y');
+    
+    // Define quarter date ranges (approximate school year quarters)
+    // Adjust these dates based on your school's actual quarter dates
+    $quarterDates = [
+        'First' => [
+            'start' => $currentYear . '-06-01',  // June 1
+            'end' => $currentYear . '-08-31'     // August 31
+        ],
+        'Second' => [
+            'start' => $currentYear . '-09-01',  // September 1
+            'end' => $currentYear . '-11-30'     // November 30
+        ],
+        'Third' => [
+            'start' => $currentYear . '-12-01',  // December 1
+            'end' => ($currentYear + 1) . '-02-28' // February 28
+        ],
+        'Fourth' => [
+            'start' => ($currentYear + 1) . '-03-01', // March 1
+            'end' => ($currentYear + 1) . '-05-31'    // May 31
+        ]
     ];
     
-    // Get the current school year
-    $schoolYearQuery = "
-        SELECT SchoolYearID 
-        FROM schoolyear 
-        WHERE IsActive = 1 
-        LIMIT 1
+    // Use selected quarter dates or default to First
+    $startDate = $quarterDates[$quarter]['start'] ?? $quarterDates['First']['start'];
+    $endDate = $quarterDates[$quarter]['end'] ?? $quarterDates['First']['end'];
+    
+    // Get SchoolYearID for the section
+    $sectionQuery = "SELECT SchoolYearID FROM section WHERE SectionID = :sectionId";
+    $sectionStmt = $db->prepare($sectionQuery);
+    $sectionStmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
+    $sectionStmt->execute();
+    $schoolYearId = $sectionStmt->fetchColumn();
+
+    // Get attendance summary for the quarter
+    $query = "
+        SELECT 
+            sp.StudentProfileID as id,
+            CONCAT(p.LastName, ', ', p.FirstName) as name,
+            COUNT(CASE WHEN a.AttendanceStatus = 'Present' THEN 1 END) as totalPresent,
+            COUNT(CASE WHEN a.AttendanceStatus = 'Absent' THEN 1 END) as totalAbsent,
+            COUNT(CASE WHEN a.AttendanceStatus = 'Late' THEN 1 END) as totalLate,
+            COUNT(CASE WHEN a.AttendanceStatus = 'Excused' THEN 1 END) as totalExcused
+        FROM studentprofile sp
+        JOIN profile p ON sp.ProfileID = p.ProfileID
+        JOIN enrollment e ON sp.StudentProfileID = e.StudentProfileID
+        LEFT JOIN attendance a ON sp.StudentProfileID = a.StudentProfileID
+            AND DATE(a.AttendanceDate) >= :startDate
+            AND DATE(a.AttendanceDate) <= :endDate
+        WHERE e.SectionID = :sectionId
+        AND e.SchoolYearID = :schoolYearId
+        AND e.EnrollmentID IN (
+            SELECT MAX(EnrollmentID) 
+            FROM enrollment 
+            WHERE StudentProfileID = sp.StudentProfileID
+            AND SchoolYearID = :schoolYearId
+            GROUP BY StudentProfileID
+        )
+        GROUP BY sp.StudentProfileID, p.LastName, p.FirstName
+        ORDER BY p.LastName ASC, p.FirstName ASC
     ";
-    $schoolYearStmt = $db->prepare($schoolYearQuery);
-    $schoolYearStmt->execute();
-    $schoolYearResult = $schoolYearStmt->fetch(PDO::FETCH_ASSOC);
     
-    if (!$schoolYearResult) {
-        throw new Exception('No active school year found');
-    }
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
+    $stmt->bindParam(':schoolYearId', $schoolYearId, PDO::PARAM_INT);
+    $stmt->bindParam(':startDate', $startDate, PDO::PARAM_STR);
+    $stmt->bindParam(':endDate', $endDate, PDO::PARAM_STR);
+    $stmt->execute();
     
-    $schoolYearId = $schoolYearResult['SchoolYearID'];
-    
-    // Build the query based on whether quarter is specified
-    if ($quarter && isset($quarterMap[$quarter])) {
-        $quarterValue = $quarterMap[$quarter];
-        
-        // Get attendance summary for specific quarter
-        $query = "
-            SELECT 
-                sp.StudentProfileID as id,
-                CONCAT(p.LastName, ', ', p.FirstName, ' ', COALESCE(p.MiddleName, '')) as name,
-                :quarter as quarter,
-                COUNT(CASE WHEN a.AttendanceStatus = 'Present' THEN 1 END) as totalPresent,
-                COUNT(CASE WHEN a.AttendanceStatus = 'Absent' THEN 1 END) as totalAbsent,
-                COUNT(CASE WHEN a.AttendanceStatus = 'Late' THEN 1 END) as totalLate,
-                COUNT(CASE WHEN a.AttendanceStatus = 'Excused' THEN 1 END) as totalExcused
-            FROM studentprofile sp
-            JOIN profile p ON sp.ProfileID = p.ProfileID
-            JOIN enrollment e ON sp.StudentProfileID = e.StudentProfileID
-            LEFT JOIN attendance a ON sp.StudentProfileID = a.StudentProfileID
-                AND a.AttendanceDate >= (
-                    SELECT StartDate 
-                    FROM quarter q 
-                    WHERE q.QuarterName = :quarterValue 
-                    AND q.SchoolYearID = :schoolYearId
-                    LIMIT 1
-                )
-                AND a.AttendanceDate <= (
-                    SELECT EndDate 
-                    FROM quarter q 
-                    WHERE q.QuarterName = :quarterValue 
-                    AND q.SchoolYearID = :schoolYearId
-                    LIMIT 1
-                )
-            WHERE e.SectionID = :sectionId
-            GROUP BY sp.StudentProfileID, p.LastName, p.FirstName, p.MiddleName
-            ORDER BY p.LastName ASC, p.FirstName ASC
-        ";
-        
-        $stmt = $db->prepare($query);
-        $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
-        $stmt->bindParam(':quarter', $quarter, PDO::PARAM_STR);
-        $stmt->bindParam(':quarterValue', $quarterValue, PDO::PARAM_STR);
-        $stmt->bindParam(':schoolYearId', $schoolYearId, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        $students = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $students[] = [
-                'id' => (int)$row['id'],
-                'name' => $row['name'],
-                'quarter' => $row['quarter'],
-                'totalPresent' => (int)$row['totalPresent'],
-                'totalAbsent' => (int)$row['totalAbsent'],
-                'totalLate' => (int)$row['totalLate'],
-                'totalExcused' => (int)$row['totalExcused']
-            ];
-        }
-        
-    } else {
-        // Get attendance summary for all quarters
-        $query = "
-            SELECT 
-                sp.StudentProfileID as id,
-                CONCAT(p.LastName, ', ', p.FirstName, ' ', COALESCE(p.MiddleName, '')) as name,
-                q.QuarterName as quarter,
-                COUNT(CASE WHEN a.AttendanceStatus = 'Present' THEN 1 END) as totalPresent,
-                COUNT(CASE WHEN a.AttendanceStatus = 'Absent' THEN 1 END) as totalAbsent,
-                COUNT(CASE WHEN a.AttendanceStatus = 'Late' THEN 1 END) as totalLate,
-                COUNT(CASE WHEN a.AttendanceStatus = 'Excused' THEN 1 END) as totalExcused
-            FROM studentprofile sp
-            JOIN profile p ON sp.ProfileID = p.ProfileID
-            JOIN enrollment e ON sp.StudentProfileID = e.StudentProfileID
-            CROSS JOIN quarter q
-            LEFT JOIN attendance a ON sp.StudentProfileID = a.StudentProfileID
-                AND a.AttendanceDate >= q.StartDate
-                AND a.AttendanceDate <= q.EndDate
-            WHERE e.SectionID = :sectionId
-                AND q.SchoolYearID = :schoolYearId
-            GROUP BY sp.StudentProfileID, p.LastName, p.FirstName, p.MiddleName, q.QuarterName, q.StartDate
-            ORDER BY p.LastName ASC, p.FirstName ASC, q.StartDate ASC
-        ";
-        
-        $stmt = $db->prepare($query);
-        $stmt->bindParam(':sectionId', $sectionId, PDO::PARAM_INT);
-        $stmt->bindParam(':schoolYearId', $schoolYearId, PDO::PARAM_INT);
-        $stmt->execute();
-        
-        $students = [];
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            // Convert quarter name format
-            $quarterDisplay = str_replace(' Quarter', '', $row['quarter']);
-            
-            $students[] = [
-                'id' => (int)$row['id'],
-                'name' => $row['name'],
-                'quarter' => $quarterDisplay,
-                'totalPresent' => (int)$row['totalPresent'],
-                'totalAbsent' => (int)$row['totalAbsent'],
-                'totalLate' => (int)$row['totalLate'],
-                'totalExcused' => (int)$row['totalExcused']
-            ];
-        }
+    $students = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $students[] = [
+            'id' => (int)$row['id'],
+            'name' => $row['name'],
+            'totalPresent' => (int)$row['totalPresent'],
+            'totalAbsent' => (int)$row['totalAbsent'],
+            'totalLate' => (int)$row['totalLate'],
+            'totalExcused' => (int)$row['totalExcused']
+        ];
     }
     
     http_response_code(200);
@@ -173,7 +137,11 @@ try {
         'success' => true,
         'data' => $students,
         'quarter' => $quarter,
-        'sectionId' => $sectionId
+        'sectionId' => $sectionId,
+        'dateRange' => [
+            'start' => $startDate,
+            'end' => $endDate
+        ]
     ]);
     
 } catch (Exception $e) {

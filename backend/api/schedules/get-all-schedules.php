@@ -40,7 +40,7 @@ if (!$db) {
 }
 
 try {
-    // Get all teacher schedules with teacher names
+    // Get all teacher schedules with teacher names and section information
     $query = "
         SELECT 
             cs.ScheduleID as id,
@@ -48,15 +48,19 @@ try {
             sub.SubjectName as subject,
             cs.DayOfWeek as day,
             CONCAT(TIME_FORMAT(cs.StartTime, '%h:%i %p'), ' - ', TIME_FORMAT(cs.EndTime, '%h:%i %p')) as time,
+            cs.StartTime as rawStartTime,
+            cs.EndTime as rawEndTime,
             cs.RoomNumber as room,
             cs.TeacherProfileID,
             cs.SubjectID,
-            cs.SectionID
+            cs.SectionID,
+            CONCAT(gl.LevelName, ' - Section ', sec.SectionName) as section
         FROM classschedule cs
         JOIN subject sub ON cs.SubjectID = sub.SubjectID
         LEFT JOIN teacherprofile tp ON cs.TeacherProfileID = tp.TeacherProfileID
         LEFT JOIN profile p ON tp.ProfileID = p.ProfileID
         JOIN section sec ON cs.SectionID = sec.SectionID
+        JOIN gradelevel gl ON sec.GradeLevelID = gl.GradeLevelID
         ORDER BY 
             p.LastName,
             FIELD(cs.DayOfWeek, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'),

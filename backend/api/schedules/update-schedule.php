@@ -85,12 +85,12 @@ try {
     
     if ($startTime !== null) {
         $updates[] = "StartTime = :startTime";
-        $params[':startTime'] = $startTime;
+        $params[':startTime'] = date('H:i:s', strtotime($startTime));
     }
     
     if ($endTime !== null) {
         $updates[] = "EndTime = :endTime";
-        $params[':endTime'] = $endTime;
+        $params[':endTime'] = date('H:i:s', strtotime($endTime));
     }
     
     if ($room !== null) {

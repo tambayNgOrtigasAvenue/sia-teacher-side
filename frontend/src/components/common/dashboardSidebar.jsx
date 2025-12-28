@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LogoutConfirmationModal from './logoutConfirmation';
 import Logo from '../../assets/img/gymnazu.png';
+import { API_ENDPOINTS } from '../../config/api';
 
 import {
     LayoutDashboard,
@@ -33,27 +34,27 @@ export default function DashboardSidebar({ collapsed, setCollapsed, mobileOpen, 
     }, []);
 
     const handleConfirmLogout = async () => {
-        try{
+        try {
             // Clear authentication tokens FIRST to prevent redirects
             localStorage.removeItem('authToken');
             sessionStorage.removeItem('teacherSession');
-            
+
             // Close the modal
             setLogoutModalOpen(false);
-            
+
             // Perform logout operations on backend
-            const response = await fetch('http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/logout.php', {
+            const response = await fetch(API_ENDPOINTS.LOGOUT, {
                 method: 'POST',
                 credentials: 'include'
             });
-        
+
             const data = await response.json();
             console.log("Logged out:", data.message);
-            
+
             // Redirect to login page with replace to prevent back navigation
             navigate('/login', { replace: true });
         }
-        catch(error){
+        catch (error) {
             console.error("Logout failed:", error);
             // Even if backend fails, tokens are already cleared, just redirect
             navigate('/login', { replace: true });
@@ -73,19 +74,18 @@ export default function DashboardSidebar({ collapsed, setCollapsed, mobileOpen, 
         return location.pathname === item.path;
     };
 
-const menuItems = [
-    { name: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/teacher-dashboard' },
-    { name: 'My Classes', icon: <Book size={18} />, path: '/teacher-dashboard/my-classes' },
-    { name: 'Teaching Schedule', icon: <Clock size={18} />, path: '/teacher-dashboard/teaching-schedule' },
-    { name: 'Notifications', icon: <Bell size={18} />, path: '/teacher-dashboard/notifications' },
-    { name: 'Announcements', icon: <Megaphone size={18} />, path: '/teacher-dashboard/announcements' },
-    { name: 'Settings', icon: <Settings size={18} />, path: '/teacher-dashboard/settings' },
-];
+    const menuItems = [
+        { name: 'Dashboard', icon: <LayoutDashboard size={18} />, path: '/teacher-dashboard' },
+        { name: 'Advisory Class', icon: <Book size={18} />, path: '/teacher-dashboard/my-classes' },
+        { name: 'Scheduling', icon: <Clock size={18} />, path: '/teacher-dashboard/teaching-schedule' },
+        { name: 'Notifications', icon: <Bell size={18} />, path: '/teacher-dashboard/notifications' },
+        { name: 'Announcements', icon: <Megaphone size={18} />, path: '/teacher-dashboard/announcements' },
+        { name: 'Settings', icon: <Settings size={18} />, path: '/teacher-dashboard/settings' },
+    ];
 
-const bottomMenuItems = [
-    { name: 'Help Support', icon: <LifeBuoy size={18} />, path: '/teacher-dashboard/help-and-support' },
-    { name: 'Logout', icon: <LogOut size={18} /> },
-];
+    const bottomMenuItems = [
+        { name: 'Logout', icon: <LogOut size={18} /> },
+    ];
 
     const NavLink = ({ item, isActive, isCollapsed = false, isMobileLink = false }) => (
         <li className="relative group">

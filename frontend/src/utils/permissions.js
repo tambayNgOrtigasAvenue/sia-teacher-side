@@ -5,16 +5,22 @@
 
 // Role IDs as defined in the database
 export const ROLES = {
-  TEACHER: 1,              // Regular Teacher - Limited access
-  SUPER_TEACHER: 2,        // Super Teacher - Full access
-  ASSISTANT_TEACHER: 3     // Assistant Teacher - Very limited access
+  SUPER_ADMIN: 1,          // Super Admin
+  REGISTRAR: 2,            // Registrar
+  FINANCE: 3,              // Finance Officer
+  TEACHER: 4,              // Regular Teacher
+  STUDENT: 5,              // Student
+  SUPER_TEACHER: 6         // Head Teacher (Super Teacher)
 };
 
 // Role Names
 export const ROLE_NAMES = {
-  1: 'Teacher',
-  2: 'Super Teacher',
-  3: 'Assistant Teacher'
+  1: 'Super Admin',
+  2: 'Registrar',
+  3: 'Finance Officer',
+  4: 'Teacher',
+  5: 'Student',
+  6: 'Head Teacher'
 };
 
 /**
@@ -31,24 +37,24 @@ const getUserRoleId = (user) => {
 };
 
 /**
- * Check if user is a Super Teacher
+ * Check if user is a Super Teacher (Head Teacher)
  * @param {Object} user - User object from AuthContext
  * @returns {boolean}
  */
 export const isSuperTeacher = (user) => {
+  if (!user) return false;
+
+  // Check by Role ID
   const roleId = getUserRoleId(user);
-  const result = roleId === ROLES.SUPER_TEACHER;
-  console.log('isSuperTeacher check:', { 
-    user, 
-    roleId, 
-    roleIdType: typeof roleId,
-    expectedRole: ROLES.SUPER_TEACHER,
-    expectedRoleType: typeof ROLES.SUPER_TEACHER,
-    result,
-    userRoleId: user?.roleId,
-    userRoleID: user?.RoleID
-  });
-  return result;
+  if (roleId === ROLES.SUPER_TEACHER) return true;
+
+  // Check by User Type (fallback)
+  if (user.userType === 'Head Teacher') return true;
+
+  // Check by Role Name (fallback)
+  if (user.roleName === 'Head Teacher' || user.RoleName === 'Head Teacher') return true;
+
+  return false;
 };
 
 /**

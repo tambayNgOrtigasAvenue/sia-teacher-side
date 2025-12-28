@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_ENDPOINTS } from '../../config/api';
 
 /**
  * InputGradeModal Component
@@ -28,6 +29,7 @@ export default function InputGradeModal({
   onSave, 
   student,
   gradeLevelId,
+  selectedClass,
   allStudents = []
 }) {
   // State for form inputs
@@ -37,6 +39,8 @@ export default function InputGradeModal({
   const [loadingSubjects, setLoadingSubjects] = useState(false);
   const [gradeValue, setGradeValue] = useState('');
   const [remarks, setRemarks] = useState('');
+  const [allGrades, setAllGrades] = useState({});
+  const [gradesLoaded, setGradesLoaded] = useState(false);
 
   // Fetch subjects when grade level changes
   useEffect(() => {
@@ -46,19 +50,12 @@ export default function InputGradeModal({
       try {
         setLoadingSubjects(true);
         const response = await axios.get(
-          `http://localhost/gymnazo-christian-academy-teacher-side/backend/api/subjects/get-subjects-by-grade.php?gradeLevelId=${gradeLevelId}`,
+          `${API_ENDPOINTS.GET_SUBJECTS_BY_GRADE}?gradeLevelId=${gradeLevelId}`,
           { withCredentials: true }
         );
         
         if (response.data.success) {
           setSubjects(response.data.data);
-          
-          // If student has selectedSubject, use that; otherwise use first subject
-          if (student?.selectedSubject) {
-            setSelectedSubject(student.selectedSubject.id.toString());
-          } else if (response.data.data.length > 0 && !selectedSubject) {
-            setSelectedSubject(response.data.data[0].id.toString());
-          }
         }
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -68,15 +65,80 @@ export default function InputGradeModal({
     };
     
     fetchSubjects();
-  }, [gradeLevelId, student?.selectedSubject]);
+  }, [gradeLevelId]);
 
-  // Auto-populate existing grade data when student or quarter changes
+  // Fetch all grades for this student
   useEffect(() => {
-    if (student && student.grades) {
-      setGradeValue(student.grades[selectedQuarter] || '');
-      setRemarks(student.grades.remarks || '');
+    const fetchStudentGrades = async () => {
+      if (!student?.id || !selectedClass?.id) return;
+
+      try {
+        const response = await axios.get(
+          `${API_ENDPOINTS.GET_STUDENT_GRADES_ALL_SUBJECTS}?studentId=${student.id}&sectionId=${selectedClass.id}`,
+          { withCredentials: true }
+        );
+
+        if (response.data.success) {
+          setAllGrades(response.data.data);
+          setGradesLoaded(true);
+        }
+      } catch (error) {
+        console.error('Error fetching student grades:', error);
+      }
+    };
+
+    fetchStudentGrades();
+  }, [student?.id, selectedClass?.id]);
+
+  // Find first empty grade slot and set default selection
+  useEffect(() => {
+    if (subjects.length > 0 && gradesLoaded && !selectedSubject) {
+      // Logic to find the first empty slot
+      let foundEmpty = false;
+      const quarters = ['q1', 'q2', 'q3', 'q4'];
+
+      // Iterate quarters first, then subjects
+      // This ensures we fill Q1 for all subjects before moving to Q2
+      for (const q of quarters) {
+        for (const subject of subjects) {
+          const subjectGrades = allGrades[subject.id];
+          // If no grade for this subject/quarter, select it
+          if (!subjectGrades || subjectGrades[q] === null || subjectGrades[q] === '') {
+            setSelectedSubject(subject.id.toString());
+            setSelectedQuarter(q);
+            foundEmpty = true;
+            break;
+          }
+        }
+        if (foundEmpty) break;
+      }
+
+      // If no empty slot found (all filled), default to first subject and q1
+      if (!foundEmpty && subjects.length > 0) {
+        setSelectedSubject(subjects[0].id.toString());
+        setSelectedQuarter('q1');
+      }
     }
-  }, [student, selectedQuarter]);
+  }, [subjects, gradesLoaded, allGrades, selectedSubject]);
+
+  // Update form when selection changes
+  useEffect(() => {
+    if (selectedSubject && allGrades[selectedSubject]) {
+      const subjectGrades = allGrades[selectedSubject];
+      setGradeValue(subjectGrades[selectedQuarter] !== null ? subjectGrades[selectedQuarter] : '');
+      setRemarks(subjectGrades.remarks || '');
+    } else {
+      setGradeValue('');
+      setRemarks('');
+    }
+  }, [selectedSubject, selectedQuarter, allGrades]);
+
+  // Refresh grades when student changes (e.g. Next button)
+  useEffect(() => {
+    setGradesLoaded(false);
+    setAllGrades({});
+    setSelectedSubject(''); // Reset selection to trigger auto-select logic again
+  }, [student?.id]);
 
   // Calculate if final grade can be computed
   const canComputeFinal = student?.grades?.q1 && student?.grades?.q2 && 
@@ -98,50 +160,59 @@ export default function InputGradeModal({
       return;
     }
 
-    const gradeData = {
-      [selectedQuarter]: parseFloat(gradeValue),
-      remarks: remarks.trim(),
-      subjectId: parseInt(selectedSubject)
-    };
-
-    onSave(student.id, gradeData);
-    resetForm();
-  };
-
-  // Handle Save & Next button click
-  const handleSaveAndNext = () => {
-    if (!gradeValue) {
-      alert('Please enter a grade value');
-      return;
-    }
-
-    if (!selectedSubject) {
-      alert('Please select a subject');
-      return;
-    }
+    const selectedSubjectObj = subjects.find(s => s.id.toString() === selectedSubject);
 
     const gradeData = {
       [selectedQuarter]: parseFloat(gradeValue),
       remarks: remarks.trim(),
-      subjectId: parseInt(selectedSubject)
+      subjectId: parseInt(selectedSubject),
+      subjectName: selectedSubjectObj?.name
     };
 
     onSave(student.id, gradeData);
 
-    // Find next student
-    const currentIndex = allStudents.findIndex(s => s.id === student.id);
-    const nextStudent = allStudents[currentIndex + 1];
+    // Update local allGrades state immediately to reflect the save
+    const updatedAllGrades = {
+      ...allGrades,
+      [selectedSubject]: {
+        ...allGrades[selectedSubject],
+        [selectedQuarter]: parseFloat(gradeValue),
+        remarks: remarks.trim()
+      }
+    };
+    setAllGrades(updatedAllGrades);
 
-    if (nextStudent) {
-      // Modal will re-render with next student via useEffect
-      resetForm();
-      // Parent component should update the student prop
+    // Find next empty slot
+    let foundNext = false;
+    const quarters = ['q1', 'q2', 'q3', 'q4'];
+
+    for (const q of quarters) {
+      for (const subject of subjects) {
+        const subjectGrades = updatedAllGrades[subject.id];
+        // If no grade for this subject/quarter, select it
+        if (!subjectGrades || subjectGrades[q] === null || subjectGrades[q] === '') {
+          setSelectedSubject(subject.id.toString());
+          setSelectedQuarter(q);
+          foundNext = true;
+          break;
+        }
+      }
+      if (foundNext) break;
+    }
+
+    // Clear inputs for the next entry (or keep if not found)
+    if (foundNext) {
+      setGradeValue('');
+      setRemarks('');
     } else {
-      // No more students, close modal
-      resetForm();
-      onClose();
+      // All grades filled
+      // Optionally close modal or show completion message
+      // For now, we just clear inputs or keep them as is? 
+      // Keeping them shows the last entered grade, which is fine.
     }
   };
+
+
 
   // Reset form to initial state
   const resetForm = () => {
@@ -304,16 +375,6 @@ export default function InputGradeModal({
             >
               Cancel
             </button>
-
-            {/* Save & Next Button (only show if not last student) */}
-            {allStudents.findIndex(s => s.id === student.id) < allStudents.length - 1 && (
-              <button
-                onClick={handleSaveAndNext}
-                className="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-full transition-colors"
-              >
-                Save & Next
-              </button>
-            )}
 
             {/* Save Button */}
             <button

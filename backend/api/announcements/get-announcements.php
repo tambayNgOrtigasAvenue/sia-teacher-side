@@ -41,6 +41,9 @@ try {
             a.AnnouncementID as id,
             a.Title as title,
             a.Content as message,
+            a.Summary as summary,
+            a.Category as category,
+            a.BannerURL as imageUrl,
             a.PublishDate as createdAt,
             CONCAT(p.FirstName, ' ', p.LastName) as createdBy
         FROM announcement a

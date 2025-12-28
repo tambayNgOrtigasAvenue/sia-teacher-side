@@ -1,31 +1,17 @@
-# Build stage
-FROM node:20-alpine AS builder
+# Use Node.js
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install dependencies
 COPY package*.json ./
+RUN npm install
 
-# Install dependencies
-RUN npm ci --legacy-peer-deps
-
-# Copy source code
+# Copy the rest of the app
 COPY . .
 
-# Build application
-RUN npm run build
+# Open the port
+EXPOSE 3000
 
-# Production stage
-FROM nginx:alpine
-
-# Copy built files from builder
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Copy nginx configuration
-COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
-
-# Expose port 80
-EXPOSE 80
-
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start the development server (This is the important part!)
+CMD ["npm", "start"]

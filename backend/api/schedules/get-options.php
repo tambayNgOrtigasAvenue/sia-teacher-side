@@ -69,15 +69,21 @@ try {
     $teachersQuery = "
         SELECT 
             u.UserID as id,
+            tp.TeacherProfileID as teacherProfileId,
             tp.EmployeeNumber as employeeNumber,
             CONCAT(p.FirstName, ' ', p.LastName) as name,
             CONCAT(p.LastName, ', ', p.FirstName) as fullName,
             tp.Specialization as specialization,
-            u.AccountStatus as status
+            u.AccountStatus as status,
+            (SELECT COUNT(*) 
+             FROM section s 
+             JOIN schoolyear sy ON s.SchoolYearID = sy.SchoolYearID 
+             WHERE s.AdviserTeacherID = tp.TeacherProfileID 
+             AND sy.IsActive = 1) as sectionCount
         FROM user u
         JOIN profile p ON u.UserID = p.UserID
         JOIN teacherprofile tp ON p.ProfileID = tp.ProfileID
-        WHERE u.UserType = 'Teacher'
+        WHERE (u.UserType = 'Teacher' OR u.UserType = 'Head Teacher')
             AND u.IsDeleted = 0
         ORDER BY p.LastName, p.FirstName
     ";

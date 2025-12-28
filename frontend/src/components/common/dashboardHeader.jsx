@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Menu, Search, Sun, Moon, Bell, User, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
+import { API_ENDPOINTS, API_URL } from '../../config/api';
 
 const Tooltip = ({ text }) => (
     <span className="
@@ -24,6 +25,7 @@ const DashboardHeader = ({ setMobileOpen }) => {
         const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
         const [notifications, setNotifications] = useState([]);
         const [unreadCount, setUnreadCount] = useState(0);
+        const [imageTimestamp, setImageTimestamp] = useState(Date.now());
         
         const [isDarkMode, setIsDarkMode] = useState(() => {
                 if (typeof window !== 'undefined') {
@@ -46,7 +48,7 @@ const DashboardHeader = ({ setMobileOpen }) => {
                 const fetchNotifications = async () => {
                         try {
                                 const response = await axios.get(
-                                        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/notifications/get-notifications.php?limit=10',
+                                        `${API_ENDPOINTS.GET_NOTIFICATIONS}?limit=10`,
                                         { withCredentials: true }
                                 );
                                 
@@ -78,6 +80,13 @@ const DashboardHeader = ({ setMobileOpen }) => {
                         localStorage.theme = 'light';
                 }
         }, [isDarkMode]);
+
+        // Update image timestamp when user profile picture changes
+        useEffect(() => {
+                if (user?.profilePictureURL) {
+                        setImageTimestamp(Date.now());
+                }
+        }, [user?.profilePictureURL]);
 
         useEffect(() => {
                 const handleClickOutside = (event) => {
@@ -223,7 +232,7 @@ const DashboardHeader = ({ setMobileOpen }) => {
                                                                         src={
                                                                                 user.profilePictureURL.startsWith('data:') || user.profilePictureURL.startsWith('http')
                                                                                         ? user.profilePictureURL 
-                                                                                        : `http://localhost/gymnazo-christian-academy-teacher-side/backend/${user.profilePictureURL}`
+                                                                                        : `${API_URL}/${user.profilePictureURL}?t=${imageTimestamp}`
                                                                         }
                                                                         alt='Profile' 
                                                                         className='w-full h-full object-cover'

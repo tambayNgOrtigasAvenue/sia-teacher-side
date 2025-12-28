@@ -27,18 +27,32 @@ export const AuthProvider = ({ children }) => {
 
         if (response.data.success) {
           setUser(response.data.user);
+          // Update session storage with latest user data
+          sessionStorage.setItem('teacherSession', JSON.stringify(response.data.user));
         } else {
-          // If auth check fails, clear tokens
+          // Try loading from session storage as fallback
+          const cachedUser = sessionStorage.getItem('teacherSession');
+          if (cachedUser) {
+            setUser(JSON.parse(cachedUser));
+          } else {
+            // If auth check fails, clear tokens
+            localStorage.removeItem('authToken');
+            sessionStorage.removeItem('teacherSession');
+            setUser(null);
+          }
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        // Try loading from session storage as fallback
+        const cachedUser = sessionStorage.getItem('teacherSession');
+        if (cachedUser) {
+          setUser(JSON.parse(cachedUser));
+        } else {
+          // Clear any stale tokens
           localStorage.removeItem('authToken');
           sessionStorage.removeItem('teacherSession');
           setUser(null);
         }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        // Clear any stale tokens
-        localStorage.removeItem('authToken');
-        sessionStorage.removeItem('teacherSession');
-        setUser(null);
       } finally {
         setLoading(false);
       }
@@ -51,7 +65,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await axios.post(
         //change this when deploying
-        //'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/login.php',
+        //'http://localhost/SMS-GCA-3H/Teacher/backend/api/auth/login.php',
         API_ENDPOINTS.LOGIN,
         { employee_number: username, password }, // Fixed: backend expects employee_number
         {
@@ -62,6 +76,9 @@ export const AuthProvider = ({ children }) => {
 
       if (response.data.success) {
         setUser(response.data.user);
+        // Store auth token to persist session
+        localStorage.setItem('authToken', 'authenticated');
+        sessionStorage.setItem('teacherSession', JSON.stringify(response.data.user));
         return {
           success: true,
           user: response.data.user,
@@ -80,7 +97,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await axios.post(
         API_ENDPOINTS.LOGOUT,
-        //'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/logout.php',
+        //'http://localhost/SMS-GCA-3H/Teacher/backend/api/auth/logout.php',
         {},
         { withCredentials: true }
       );

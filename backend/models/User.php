@@ -130,7 +130,7 @@ class User {
             LEFT JOIN
                 role r ON ur.RoleID = r.RoleID
             WHERE 
-                u.UserID = :userId AND u.UserType = 'Teacher'
+                u.UserID = :userId AND (u.UserType = 'Teacher' OR u.UserType = 'Head Teacher')
         ";
 
         try {
@@ -160,7 +160,7 @@ class User {
             JOIN 
                 user u ON p.UserID = u.UserID
             WHERE 
-                tp.EmployeeNumber = :EmployeeNumber AND u.UserType = 'Teacher'";
+                tp.EmployeeNumber = :EmployeeNumber AND (u.UserType = 'Teacher' OR u.UserType = 'Head Teacher')";
 
         try {
             $stmt = $this->conn->prepare($query);

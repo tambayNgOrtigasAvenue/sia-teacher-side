@@ -5,6 +5,7 @@ import { User, Mail, Lock, Phone, MapPin, Briefcase, Calendar, UserPlus } from '
 import Header from './loginHeader';
 import Bg from '../../../assets/img/bg.png';
 import Logo from '../../../assets/img/gymnazu.png';
+import { API_ENDPOINTS } from '../../../config/api';
 
 const RegisterTeacher = () => {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ const RegisterTeacher = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost/gymnazo-christian-academy-teacher-side/backend/api/auth/register-teacher.php',
+        API_ENDPOINTS.REGISTER_TEACHER,
         {
           email: formData.email,
           password: formData.password,

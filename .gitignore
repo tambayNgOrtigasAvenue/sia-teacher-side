@@ -44,3 +44,7 @@ secrets/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Documentation - exclude all .md files except README.md
+*.md
+!README.md

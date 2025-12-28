@@ -3,19 +3,41 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import DarkModeProvider from './components/DarkModeProvider';
 import DashboardLayout from './components/layout/dashboardLayout';
-import DashboardPage from './components/pages/dashboardPage';
-import ClassManagementApp from './components/pages/classManagementApp';
-import TeachingSchedulePage from './components/pages/teachingSchedulePage';
-import NotificationPage from './components/pages/notificationPage';
-import AnnouncementContainer from './components/pages/announcementContainer';
-import SettingsPage from './components/pages/settingsPage';
-import ApplicationPage from './components/pages/applicationPage';
-import HelpSupportPage from './components/pages/helpSupportPage';
-import LoginPage from './components/pages/loginPage';
+
+// Feature: Auth
+import LoginPage from './features/auth/pages/LoginPage';
+import ForgotPasswordPage from './features/auth/pages/ForgotPasswordPage';
+import ResetPasswordPage from './features/auth/pages/ResetPasswordPage';
+
+// Feature: Dashboard
+import DashboardPage from './features/dashboard/pages/DashboardPage';
+
+// Feature: Classes
+import ClassManagementApp from './features/classes/pages/ClassManagementApp';
+import ApplicationPage from './features/classes/pages/ApplicationPage';
+
+// Feature: Scheduling
+import TeachingSchedulePage from './features/scheduling/pages/TeachingSchedulePage';
+import EmergencyDismissalPage from './features/scheduling/pages/EmergencyDismissalPage';
+
+// Feature: Attendance
+import AttendancePage from './features/attendance/pages/AttendancePage';
+import AttendanceReportPage from './features/attendance/pages/AttendanceReportPage';
+
+// Feature: Notifications
+import NotificationPage from './features/notifications/pages/NotificationPage';
+
+// Feature: Announcements
+import AnnouncementContainer from './features/announcements/pages/AnnouncementContainer';
+
+// Feature: Settings
+import SettingsPage from './features/settings/pages/SettingsPage';
+
+// Feature: Help
+import HelpSupportPage from './features/help/pages/HelpSupportPage';
+
+// Other
 import RegisterTeacher from './components/common/homepage/registerTeacher';
-import AttendancePage from './pages/AttendancePage';
-import AttendanceReportPage from './pages/AttendanceReportPage';
-import EmergencyDismissalPage from './pages/EmergencyDismissalPage';
 
 /** 
  * ProtectedRoute Component
@@ -48,16 +70,19 @@ function App() {
           <Routes>
             {/* Login Route - Default landing page */}
             <Route path="/login" element={<LoginPage />} />
-            
-            {/* Registration Route */}
-            <Route path="/register-teacher" element={<RegisterTeacher />} />
-            
-            {/* Root path redirects to login */}
+
+            {/* Password Reset Routes 
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            */}
+
+            {/* Root path redirects to login
             <Route path="/" element={<Navigate to="/login" replace />} />
-            
+            */}
+
             {/* Protected Dashboard Routes */}
-            <Route 
-              path="/teacher-dashboard" 
+            <Route
+              path="/teacher-dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardLayout />
@@ -73,10 +98,9 @@ function App() {
               <Route path="notifications" element={<NotificationPage />} />
               <Route path="announcements" element={<AnnouncementContainer />} />
               <Route path="settings" element={<SettingsPage />} />
-              <Route path="help-and-support" element={<HelpSupportPage />} />
             </Route>
 
-            {/* Catch-all route - redirect to login for any unknown paths */}
+            {/* Catch-all route - redirect t  o login for any unknown paths */}
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </DarkModeProvider>

@@ -30,6 +30,13 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Check Authorization (Head Teacher only)
+if (!isset($_SESSION['user_type']) || $_SESSION['user_type'] !== 'Head Teacher') {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Access denied. Only Head Teachers can create sections.']);
+    exit();
+}
+
 // Get database connection
 $database = new Database();
 $db = $database->getConnection();
@@ -45,7 +52,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 
 if (!$input || empty($input['gradeLevelId']) || empty($input['schoolYearId'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'message' => 'Grade Level ID and School Year ID are required.']);
+    echo json_encode(['success' => false, 'message' => 'Grade Level ID, School Year ID, and Room Number are required.']);
     exit();
 }
 
@@ -75,7 +82,7 @@ try {
         // Check if section already exists
         $checkQuery = "
             SELECT SectionID FROM section 
-            WHERE SectionName = :sectionName 
+            WHERE SectionName = :sectionName
             AND GradeLevelID = :gradeLevelId 
             AND SchoolYearID = :schoolYearId
             LIMIT 1
